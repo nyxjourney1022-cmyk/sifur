@@ -1,0 +1,18 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Barang extends Model
+{
+    public function kayu(){
+        return $this->belongsTo(Kayu::class);
+    }
+    public function detailReservasis(){
+        return $this->hasMany(DetailReservasi::class);
+    }
+    public function detailTransaksis(){
+        return $this->hasMany(DetailTransaksi::class);
+    }
+}
