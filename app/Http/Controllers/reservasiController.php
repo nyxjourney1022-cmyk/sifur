@@ -67,7 +67,7 @@ class reservasiController extends Controller
             DB::rollBack();
             return response()-> json([
                 'message'=> 'Reservasi gagal dibuat karena $e',
-                'errors' => $e-> getMessage()
+                'error' => $e-> getMessage()
             ],500);
         }
     }

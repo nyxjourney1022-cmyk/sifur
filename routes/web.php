@@ -5,7 +5,7 @@ use App\Http\Controllers\reservasiController;
 
 
 use Illuminate\Support\Facades\Route;
-use PHPUnit\Framework\TestStatus\Risky;
+
 
 Route::get('/Home', function () {
     return view('welcome');
@@ -17,3 +17,4 @@ Route::get('/barang',[barangController::class, 'index']);
 
 // Post Semua reservasi
 Route::post('/reservasi',[reservasiController::class, 'store']);
+Route::post('/barang',[barangController::class, 'store']);
