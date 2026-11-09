@@ -71,7 +71,7 @@ class reservasiController extends Controller
             ], 500);
         }
     }
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $reservasi = Reservasi::find($id);
         if (!$reservasi) {
@@ -95,6 +95,30 @@ class reservasiController extends Controller
         DB::beginTransaction();
         try {
 
+            $pelanggan = Pelanggan::find($reservasi->pelanggan_id);
+            if ($pelanggan) {
+                $pelanggan->update([
+                    'nama' => $validatedata['nama'],
+                    'no_tlp' => $validatedata['no_tlp'],
+                    'alamat' => $validatedata['alamat']
+                ]);
+            }
+
+            $reservasi->update([
+                'tanggal_reservasi' => $validatedata['tanggal_reservasi'],
+                'status' => $validatedata['status'] ?? $reservasi->status
+            ]);
+
+
+            DetailReservasi::where('reservasi_id', $reservasi->id)->delete();
+
+            foreach ($validatedata['details'] as $item) {
+                DetailReservasi::create([
+                    'reservasi_id' => $reservasi->id,
+                    'barang_id' => $item['barang_id'],
+                    'jumlah' => $item['jumlah'],
+                ]);
+            }
             DB::commit();
             return response()->json([
                 'message' => 'barang berhasil diupdate',
@@ -109,7 +133,7 @@ class reservasiController extends Controller
             ], 500);
         }
     }
-    public function destroy($id)
+    public function destroy(string $id)
     {
         $reservasi = Reservasi::find($id);
         if (!$reservasi) {
