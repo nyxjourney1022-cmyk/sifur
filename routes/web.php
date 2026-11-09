@@ -1,12 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\reservasiController;
+use PHPUnit\Framework\TestStatus\Risky;
 
-Route::get('/', function () {
+Route::get('/Home', function () {
     return view('welcome');
 });
 
-Route::get('/mahasiswa', [MahasiswaController::class, 'index']);
-Route::get('/mahasiswa/{id}', [MahasiswaController::class, 'show']);
-Route::post('/mahasiswa', [MahasiswaController::class, 'store']);
+//  Data semua reservasi
+Route::get('/reservasi',[reservasiController::class, 'index']);
+
+// Post Semua reservasi
+Route::post('/reservasi',[reservasiController::class, 'store']);
