@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\barangController;
+use App\Http\Controllers\kayuController;
 use App\Http\Controllers\reservasiController;
 
 
@@ -14,6 +15,13 @@ Route::get('/Home', function () {
 // Get Data
 Route::get('/reservasi',[reservasiController::class, 'index']);
 Route::get('/barang',[barangController::class, 'index']);
+Route::get('/kayu',[kayuController::class, 'index']);
+
+// Update
+Route::put('/reservasi/{id}',[reservasiController::class, 'Update']);
+
+// Destroy
+Route::delete('/reservasi/{id}',[reservasiController::class,'destroy']);
 
 // Post Semua reservasi
 Route::post('/reservasi',[reservasiController::class, 'store']);

@@ -59,16 +59,69 @@ class reservasiController extends Controller
             };
             DB::commit();
             return response()->json([
-                'message'=>'Reservasi berhasil dibuat',
-                'data_pelanggan'=> $pelanggans,
-                'data_reservasi'=>$reservasi
-            ],201);
+                'message' => 'Reservasi berhasil dibuat',
+                'data_pelanggan' => $pelanggans,
+                'data_reservasi' => $reservasi
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()-> json([
-                'message'=> 'Reservasi gagal dibuat karena $e',
-                'error' => $e-> getMessage()
-            ],500);
+            return response()->json([
+                'message' => 'Reservasi gagal dibuat karena $e',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
+    public function update(Request $request, $id)
+    {
+        $reservasi = Reservasi::find($id);
+        if (!$reservasi) {
+            return response()->json([
+                'message' => 'Barang tidak ditemukan',
+                'success' => false
+            ], 404);
+        }
+        $validatedata = $request->validate([
+            'nama' => 'required|string|max:255',
+            'no_tlp' => 'required|string|max:255',
+            'alamat' => 'required|string',
+
+            'tanggal_reservasi' => 'required|date',
+            'status' => 'nullable|in:Menunggu, Diproses, Selesai, Dibatalkan',
+
+            'details' => 'required|array',
+            'details.*.barang_id' => 'required|string',
+            'details.*.jumlah' => 'required|int|min:1'
+        ]);
+        DB::beginTransaction();
+        try {
+
+            DB::commit();
+            return response()->json([
+                'message' => 'barang berhasil diupdate',
+                'success' => true,
+                'data_reservasi' => $reservasi
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'reservasi tidak berhasil diupdate',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function destroy($id)
+    {
+        $reservasi = Reservasi::find($id);
+        if (!$reservasi) {
+            return response()->json([
+                'message' => 'reservasi tidak ditemukan',
+                'success' => false
+            ], 404);
+        }
+        $reservasi->delete();
+        return response()->json([
+            'message' => 'reservasi berhasil dihapus',
+            'success' => true
+        ], 200);
     }
 }
