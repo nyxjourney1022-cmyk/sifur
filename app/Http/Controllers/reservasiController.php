@@ -24,7 +24,7 @@ class reservasiController extends Controller
 
     public function store(Request $request)
     {
-        $validatedata = $request->validate([
+        $validate = $request->validate([
             'nama' => 'required|string|max:255',
             'no_tlp' => 'required|string|max:255',
             'alamat' => 'required|string',
@@ -39,16 +39,16 @@ class reservasiController extends Controller
         DB::beginTransaction();
         try {
             $pelanggans = Pelanggan::firstOrCreate(
-                ['no_tlp' => $request->no_tlp],
+                ['no_tlp' => $validate['no_tlp']],
                 [
-                    'nama' => $request->nama,
-                    'alamat' => $request->alamat
+                    'nama' => $validate['nama'],
+                    'alamat' => $validate['alamat']
                 ]
             );
             $reservasi = Reservasi::create([
                 'pelanggan_id' => $pelanggans->id,
-                'tanggal_reservasi' => $request->tanggal,
-                'status' => $request->status ?? 'Menunggu'
+                'tanggal_reservasi' => $validate['tanggal_reservasi'],
+                'status' => $validate['status'] ?? 'Menunggu'
             ]);
             foreach ($request->details as $items) {
                 DetailReservasi::create([
@@ -80,7 +80,7 @@ class reservasiController extends Controller
                 'success' => false
             ], 404);
         }
-        $validatedata = $request->validate([
+        $validate = $request->validate([
             'nama' => 'required|string|max:255',
             'no_tlp' => 'required|string|max:255',
             'alamat' => 'required|string',
@@ -98,21 +98,21 @@ class reservasiController extends Controller
             $pelanggan = Pelanggan::find($reservasi->pelanggan_id);
             if ($pelanggan) {
                 $pelanggan->update([
-                    'nama' => $validatedata['nama'],
-                    'no_tlp' => $validatedata['no_tlp'],
-                    'alamat' => $validatedata['alamat']
+                    'nama' => $validate['nama'],
+                    'no_tlp' => $validate['no_tlp'],
+                    'alamat' => $validate['alamat']
                 ]);
             }
 
             $reservasi->update([
-                'tanggal_reservasi' => $validatedata['tanggal_reservasi'],
-                'status' => $validatedata['status'] ?? $reservasi->status
+                'tanggal_reservasi' => $validate['tanggal_reservasi'],
+                'status' => $validate['status'] ?? $reservasi->status
             ]);
 
 
             DetailReservasi::where('reservasi_id', $reservasi->id)->delete();
 
-            foreach ($validatedata['details'] as $item) {
+            foreach ($validate['details'] as $item) {
                 DetailReservasi::create([
                     'reservasi_id' => $reservasi->id,
                     'barang_id' => $item['barang_id'],
