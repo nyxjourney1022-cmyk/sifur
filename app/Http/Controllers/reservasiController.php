@@ -30,11 +30,11 @@ class reservasiController extends Controller
             'alamat' => 'required|string',
 
             'tanggal_reservasi' => 'required|date',
-            'status' => 'nullable|in:Menunggu, Diproses, Selesai, Dibatalkan',
+            'status' => 'nullable|in:Menunggu,Diproses,Selesai,Dibatalkan',
 
             'details' => 'required|array',
             'details.*.barang_id' => 'required|string',
-            'details.*.jumlah' => 'required|int|min:1'
+            'details.*.jumlah' => 'required|integer|min:1'
         ]);
         DB::beginTransaction();
         try {
@@ -50,7 +50,7 @@ class reservasiController extends Controller
                 'tanggal_reservasi' => $validate['tanggal_reservasi'],
                 'status' => $validate['status'] ?? 'Menunggu'
             ]);
-            foreach ($request->details as $items) {
+            foreach ($validate['details'] as $items) {
                 DetailReservasi::create([
                     'reservasi_id' => $reservasi->id,
                     'barang_id' => $items['barang_id'],
@@ -66,7 +66,7 @@ class reservasiController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Reservasi gagal dibuat karena $e',
+                'message' => 'Reservasi gagal dibuat',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -76,7 +76,7 @@ class reservasiController extends Controller
         $reservasi = Reservasi::find($id);
         if (!$reservasi) {
             return response()->json([
-                'message' => 'Barang tidak ditemukan',
+                'message' => 'Reservasi tidak ditemukan',
                 'success' => false
             ], 404);
         }
@@ -86,11 +86,11 @@ class reservasiController extends Controller
             'alamat' => 'required|string',
 
             'tanggal_reservasi' => 'required|date',
-            'status' => 'nullable|in:Menunggu, Diproses, Selesai, Dibatalkan',
+            'status' => 'nullable|in:Menunggu,Diproses,Selesai,Dibatalkan',
 
             'details' => 'required|array',
             'details.*.barang_id' => 'required|string',
-            'details.*.jumlah' => 'required|int|min:1'
+            'details.*.jumlah' => 'required|integer|min:1'
         ]);
         DB::beginTransaction();
         try {
@@ -121,7 +121,7 @@ class reservasiController extends Controller
             }
             DB::commit();
             return response()->json([
-                'message' => 'barang berhasil diupdate',
+                'message' => 'reservasi berhasil diupdate',
                 'success' => true,
                 'data_reservasi' => $reservasi
             ], 200);
