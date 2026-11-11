@@ -3,13 +3,12 @@
 use App\Http\Controllers\barangController;
 use App\Http\Controllers\kayuController;
 use App\Http\Controllers\reservasiController;
-
+use App\Http\Controllers\HomeController;
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('home');
-});
+Route::get('/', [HomeController::class, 'index']);
+Route::get('/katalog', [HomeController::class, 'katalog']);
 
 // Get Data
 Route::get('/reservasi',[reservasiController::class, 'index']);

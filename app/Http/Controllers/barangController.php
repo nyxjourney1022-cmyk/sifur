@@ -74,7 +74,7 @@ class barangController extends Controller
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
-            'stoc_barang' => 'required|integer|min:1',
+            'stok_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
             'jenis_kayu' => 'required|string|max:100',
             'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webm|max:2048'
