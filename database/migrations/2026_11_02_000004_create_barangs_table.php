@@ -17,6 +17,7 @@
                 $table->string('kategori');
                 $table->integer('stok_barang');
                 $table->decimal('harga', 12, 2);
+                $table->string('gambar')->nullable();  
                 $table->foreignId('kayu_id')->constrained('kayus');
                 $table->timestamps();
             });

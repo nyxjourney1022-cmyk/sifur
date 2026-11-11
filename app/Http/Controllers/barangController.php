@@ -6,6 +6,7 @@ use App\Models\Barang;
 use App\Models\Kayu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 
 class barangController extends Controller
@@ -27,10 +28,15 @@ class barangController extends Controller
             'kategori' => 'required|string|max:255',
             'stok_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
-            'jenis_kayu' => 'required|string|max:100'
+            'jenis_kayu' => 'required|string|max:100',
+            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webm|max:2048'
         ]);
         DB::beginTransaction();
         try {
+            $pathGambar= null;
+            if($request->hasFile('gambar')){
+                $pathGambar= $request->file('gambar')->store('barang_image','public');
+            }
             $kayu = Kayu::firstOrCreate(
                 ['jenis_kayu' => $validate['jenis_kayu']]
             );
@@ -39,7 +45,8 @@ class barangController extends Controller
                 'kategori' => $validate['kategori'],
                 'stok_barang' => $validate['stok_barang'],
                 'harga' => $validate['harga'],
-                'kayu_id' => $kayu->id
+                'kayu_id' => $kayu->id,
+                'gambar'=>$pathGambar
             ]);
             DB::commit();
             return response()->json([
@@ -69,10 +76,15 @@ class barangController extends Controller
             'kategori' => 'required|string|max:255',
             'stoc_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
-            'jenis_kayu' => 'required|string|max:100'
+            'jenis_kayu' => 'required|string|max:100',
+            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webm|max:2048'
         ]);
         DB::beginTransaction();
         try {
+            $pathGambar = null;
+            if($request -> hasfile('gambar')){
+                $pathGambar= $request->file('gambar')->store('barang_image','public');
+            }
             $kayu = Kayu::firstOrCreate([
                 'jenis_kayu' => $validate['jenis_kayu']
             ]);
@@ -81,7 +93,8 @@ class barangController extends Controller
                 'kategori' => $validate['kategori'],
                 'stok_barang' => $validate['stok_barang'],
                 'harga' => $validate['harga'],
-                'kayu_id'=> $kayu->id
+                'kayu_id'=> $kayu->id,
+                'gambar'=>$pathGambar
             ]);
             DB::commit();
             return response()->json([

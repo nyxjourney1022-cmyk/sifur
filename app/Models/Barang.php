@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Barang extends Model
 {
-    protected $fillable = ['nama_barang', 'kategori','stok_barang', 'harga', 'kayu_id'];
+    protected $fillable = ['nama_barang', 'kategori','stok_barang', 'harga', 'kayu_id', 'gambar'];
 
     public function kayu(){
         return $this->belongsTo(Kayu::class);
