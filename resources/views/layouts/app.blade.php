@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', $store_name ?? config('app.name')) – Furniture Kayu Berkualitas</title>
     <meta name="description" content="@yield('description', 'Furniture kayu berkualitas untuk rumah, kantor, dan hunian Anda.')">
 
@@ -12,13 +13,13 @@
             theme: {
                 extend: {
                     colors: {
-                        cream:     '#F4EFE6',
-                        sand:      '#EBE3D4',
-                        wood:      '#8A5A3B',
+                        cream:       '#F4EFE6',
+                        sand:        '#EBE3D4',
+                        wood:        '#8A5A3B',
                         'wood-dark': '#6A4429',
-                        olive:     '#5B6B4A',
-                        ink:       '#2A2420',
-                        muted:     '#4A413A',
+                        olive:       '#5B6B4A',
+                        ink:         '#2A2420',
+                        muted:       '#4A413A',
                     },
                     fontFamily: {
                         serif: ['Fraunces', 'Georgia', 'serif'],
@@ -32,30 +33,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Scrollbar halus untuk horizontal scroll */
         .scroll-x::-webkit-scrollbar { height: 4px; }
         .scroll-x::-webkit-scrollbar-track { background: transparent; }
         .scroll-x::-webkit-scrollbar-thumb { background: #8A5A3B55; border-radius: 99px; }
         .scroll-x::-webkit-scrollbar-thumb:hover { background: #8A5A3B; }
+        .scroll-y::-webkit-scrollbar { width: 4px; }
+        .scroll-y::-webkit-scrollbar-track { background: transparent; }
+        .scroll-y::-webkit-scrollbar-thumb { background: #8A5A3B55; border-radius: 99px; }
 
-        /* Snap scroll */
         .snap-x-mandatory { scroll-snap-type: x mandatory; }
         .snap-start { scroll-snap-align: start; }
 
-        /* Fade in animation */
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(24px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .fade-up { animation: fadeUp .6s ease both; }
+        .fade-up   { animation: fadeUp .6s ease both; }
         .fade-up-2 { animation: fadeUp .6s .15s ease both; }
         .fade-up-3 { animation: fadeUp .6s .3s ease both; }
 
-        /* Nav active */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        .slide-in-right { animation: slideInRight .3s ease both; }
+
         .nav-link { position: relative; }
         .nav-link::after {
-            content: '';
-            position: absolute;
+            content: ''; position: absolute;
             bottom: -2px; left: 0;
             width: 0; height: 2px;
             background: #8A5A3B;
@@ -65,41 +70,114 @@
 
         body { font-family: 'Inter', system-ui, sans-serif; }
         h1,h2,h3 { font-family: 'Fraunces', Georgia, serif; }
+
+        /* Toast */
+        #toast { transition: all .3s ease; }
     </style>
     @stack('styles')
 </head>
 <body class="bg-cream text-ink antialiased">
 
-    {{-- NAVBAR --}}
-    <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-cream/80 backdrop-blur-md border-b border-sand">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
+{{-- ══ NAVBAR ══════════════════════════════════════════════ --}}
+<header class="fixed top-0 left-0 right-0 z-50 bg-cream/80 backdrop-blur-md border-b border-sand">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
 
-            {{-- Logo --}}
-            <a href="{{ url('/') }}" class="font-serif text-2xl font-semibold text-ink tracking-tight">
-                {{ $store_name ?? config('app.name') }}
-            </a>
+        {{-- Logo --}}
+        <a href="{{ route('home') }}" class="font-serif text-2xl font-semibold text-ink tracking-tight">
+            {{ $store_name ?? config('app.name') }}
+        </a>
 
-            {{-- Desktop Nav --}}
-            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-muted">
-                <a href="{{ url('/') }}#koleksi"  class="nav-link hover:text-ink transition-colors">Koleksi</a>
-                <a href="{{ url('/katalog') }}"   class="nav-link hover:text-ink transition-colors">Katalog</a>
-                <a href="{{ url('/') }}#tentang"  class="nav-link hover:text-ink transition-colors">Tentang</a>
-                <a href="{{ url('/') }}#kontak"   class="nav-link hover:text-ink transition-colors">Kontak</a>
-            </nav>
+        {{-- Desktop Nav --}}
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-muted">
+            <a href="{{ route('home') }}#koleksi" class="nav-link hover:text-ink transition-colors">Koleksi</a>
+            <a href="{{ route('katalog') }}"      class="nav-link hover:text-ink transition-colors">Katalog</a>
+            <a href="{{ route('home') }}#tentang" class="nav-link hover:text-ink transition-colors">Tentang</a>
+            <a href="{{ route('home') }}#kontak"  class="nav-link hover:text-ink transition-colors">Kontak</a>
+        </nav>
 
-            {{-- CTA --}}
-            <div class="hidden md:flex items-center gap-3">
-                <a href="https://wa.me/{{ $whatsapp ?? '62xxxxxxxxxx' }}"
-                   target="_blank"
-                   class="inline-flex items-center gap-2 bg-wood text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-wood-dark transition-colors">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        {{-- Right actions --}}
+        <div class="flex items-center gap-2">
+
+            {{-- Cart button --}}
+            <button id="cart-btn" onclick="CartDrawer.open()"
+                    class="relative p-2.5 rounded-full hover:bg-sand transition-colors" aria-label="Keranjang">
+                <svg class="w-5 h-5 text-ink" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                <span id="cart-badge"
+                      class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-wood text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">
+                    0
+                </span>
+            </button>
+
+            @auth
+            {{-- User dropdown --}}
+            <div class="relative hidden md:block" id="user-menu-wrapper">
+                <button id="user-btn" onclick="toggleUserMenu()"
+                        class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-sand transition-colors">
+                    @if(auth()->user()->avatar)
+                        <img src="{{ auth()->user()->avatar }}" alt="" 
+                             referrerpolicy="no-referrer"
+                             class="w-7 h-7 rounded-full object-cover">
+                    @else
+                        <div class="w-7 h-7 rounded-full bg-wood text-white text-xs font-bold flex items-center justify-center">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                    @endif
+                    <span class="text-sm font-medium text-ink max-w-[100px] truncate">{{ auth()->user()->name }}</span>
+                    <svg class="w-3.5 h-3.5 text-muted" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                     </svg>
-                    WhatsApp
+                </button>
+
+                <div id="user-dropdown"
+                     class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-sand overflow-hidden z-50">
+                    <div class="px-4 py-3 border-b border-sand">
+                        <p class="text-xs text-muted">Masuk sebagai</p>
+                        <p class="text-sm font-semibold text-ink truncate">{{ auth()->user()->email }}</p>
+                    </div>
+                    <a href="{{ route('profil') }}"
+                       class="flex items-center gap-2.5 px-4 py-3 text-sm text-ink hover:bg-sand transition-colors">
+                        <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Profil & Alamat
+                    </a>
+                    <a href="{{ route('pesanan') }}"
+                       class="flex items-center gap-2.5 px-4 py-3 text-sm text-ink hover:bg-sand transition-colors">
+                        <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        Pesanan Saya
+                    </a>
+                    <div class="border-t border-sand">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Keluar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @else
+            <div class="hidden md:flex items-center gap-2">
+                <a href="{{ route('login') }}"
+                   class="text-sm font-medium text-muted hover:text-ink transition-colors px-4 py-2">
+                    Masuk
+                </a>
+                <a href="{{ route('register') }}"
+                   class="text-sm font-semibold bg-wood text-white px-5 py-2.5 rounded-full hover:bg-wood-dark transition-colors">
+                    Daftar
                 </a>
             </div>
+            @endauth
 
-            {{-- Mobile Hamburger --}}
+            {{-- Mobile hamburger --}}
             <button id="menu-btn" class="md:hidden p-2 rounded-lg hover:bg-sand transition-colors" aria-label="Menu">
                 <svg id="icon-open" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -109,91 +187,309 @@
                 </svg>
             </button>
         </div>
+    </div>
 
-        {{-- Mobile Menu --}}
-        <div id="mobile-menu" class="hidden md:hidden border-t border-sand bg-cream/95 backdrop-blur-md">
-            <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 text-sm font-medium">
-                <a href="{{ url('/') }}#koleksi" class="text-muted hover:text-ink transition-colors">Koleksi</a>
-                <a href="{{ url('/katalog') }}"  class="text-muted hover:text-ink transition-colors">Katalog</a>
-                <a href="{{ url('/') }}#tentang" class="text-muted hover:text-ink transition-colors">Tentang</a>
-                <a href="{{ url('/') }}#kontak"  class="text-muted hover:text-ink transition-colors">Kontak</a>
-                <a href="https://wa.me/{{ $whatsapp ?? '62xxxxxxxxxx' }}" target="_blank"
-                   class="inline-flex items-center justify-center gap-2 bg-wood text-white font-semibold px-5 py-3 rounded-full hover:bg-wood-dark transition-colors">
-                    Chat via WhatsApp
-                </a>
+    {{-- Mobile menu --}}
+    <div id="mobile-menu" class="hidden md:hidden border-t border-sand bg-cream/95 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-3 text-sm font-medium">
+            <a href="{{ route('home') }}#koleksi" class="text-muted hover:text-ink py-1">Koleksi</a>
+            <a href="{{ route('katalog') }}"      class="text-muted hover:text-ink py-1">Katalog</a>
+            <a href="{{ route('home') }}#tentang" class="text-muted hover:text-ink py-1">Tentang</a>
+            <a href="{{ route('home') }}#kontak"  class="text-muted hover:text-ink py-1">Kontak</a>
+            <div class="border-t border-sand pt-3 flex flex-col gap-2">
+                @auth
+                    <a href="{{ route('profil') }}" class="text-ink font-semibold py-1">Profil & Alamat</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-red-600 font-semibold py-1 text-left w-full">Keluar</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}"    class="text-center border-2 border-ink/20 text-ink font-semibold px-5 py-3 rounded-full">Masuk</a>
+                    <a href="{{ route('register') }}" class="text-center bg-wood text-white font-semibold px-5 py-3 rounded-full">Daftar</a>
+                @endauth
             </div>
         </div>
-    </header>
+    </div>
+</header>
 
-    {{-- CONTENT --}}
-    <main class="pt-16">
-        @yield('content')
-    </main>
+{{-- ══ CONTENT ═══════════════════════════════════════════════ --}}
+<main class="pt-16">
+    @if(session('success'))
+    <div class="bg-green-50 border-b border-green-200 text-green-700 text-sm text-center px-4 py-2.5">
+        {{ session('success') }}
+    </div>
+    @endif
+    @yield('content')
+</main>
 
-    {{-- FOOTER --}}
-    <footer class="bg-ink text-white/70">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                <div>
-                    <p class="font-serif text-2xl font-semibold text-white mb-3">{{ $store_name ?? config('app.name') }}</p>
-                    <p class="text-sm leading-relaxed">Furniture kayu berkualitas untuk rumah, kantor, dan hunian Anda. Dibuat dengan teliti oleh pengrajin berpengalaman.</p>
-                </div>
-                <div>
-                    <p class="text-white font-semibold mb-3">Navigasi</p>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="{{ url('/') }}"         class="hover:text-white transition-colors">Beranda</a></li>
-                        <li><a href="{{ url('/katalog') }}"  class="hover:text-white transition-colors">Katalog</a></li>
-                        <li><a href="{{ url('/') }}#tentang" class="hover:text-white transition-colors">Tentang Kami</a></li>
-                        <li><a href="{{ url('/') }}#kontak"  class="hover:text-white transition-colors">Kontak</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <p class="text-white font-semibold mb-3">Hubungi Kami</p>
-                    <ul class="space-y-2 text-sm">
-                        <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 mt-0.5 shrink-0 text-wood" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            {{ $address ?? '[ALAMAT SHOWROOM]' }}
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <svg class="w-4 h-4 shrink-0 text-wood" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                            {{ $phone ?? '[NOMOR TELEPON]' }}
-                        </li>
-                    </ul>
-                </div>
+{{-- ══ CART DRAWER ════════════════════════════════════════════ --}}
+@include('partials.cart-drawer')
+
+{{-- ══ TOAST ══════════════════════════════════════════════════ --}}
+<div id="toast"
+     class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none opacity-0 translate-y-4">
+    <div id="toast-inner" class="bg-ink text-white text-sm font-medium px-5 py-3 rounded-full shadow-xl flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toast-msg"></span>
+    </div>
+</div>
+
+{{-- ══ FOOTER ═════════════════════════════════════════════════ --}}
+<footer class="bg-ink text-white/70">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <div>
+                <p class="font-serif text-2xl font-semibold text-white mb-3">{{ $store_name ?? config('app.name') }}</p>
+                <p class="text-sm leading-relaxed">Furniture kayu berkualitas untuk rumah, kantor, dan hunian Anda.</p>
             </div>
-            <div class="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <span>&copy; {{ date('Y') }} {{ $store_name ?? config('app.name') }}. All rights reserved.</span>
-                <span>Dibuat dengan ❤ untuk furniture berkualitas</span>
+            <div>
+                <p class="text-white font-semibold mb-3">Navigasi</p>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="{{ route('home') }}"         class="hover:text-white transition-colors">Beranda</a></li>
+                    <li><a href="{{ route('katalog') }}"      class="hover:text-white transition-colors">Katalog</a></li>
+                    <li><a href="{{ route('home') }}#tentang" class="hover:text-white transition-colors">Tentang Kami</a></li>
+                    <li><a href="{{ route('home') }}#kontak"  class="hover:text-white transition-colors">Kontak</a></li>
+                </ul>
+            </div>
+            <div>
+                <p class="text-white font-semibold mb-3">Hubungi Kami</p>
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-start gap-2">
+                        <svg class="w-4 h-4 mt-0.5 shrink-0 text-wood" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{ $address ?? '[ALAMAT SHOWROOM]' }}
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0 text-wood" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        {{ $phone ?? '[NOMOR TELEPON]' }}
+                    </li>
+                </ul>
             </div>
         </div>
-    </footer>
+        <div class="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <span>&copy; {{ date('Y') }} {{ $store_name ?? config('app.name') }}. All rights reserved.</span>
+            <span>Dibuat dengan ❤ untuk furniture berkualitas</span>
+        </div>
+    </div>
+</footer>
 
-    <script>
-        // Mobile menu toggle
-        const btn       = document.getElementById('menu-btn');
-        const menu      = document.getElementById('mobile-menu');
-        const iconOpen  = document.getElementById('icon-open');
-        const iconClose = document.getElementById('icon-close');
-        btn?.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-            iconOpen.classList.toggle('hidden');
-            iconClose.classList.toggle('hidden');
-        });
+<script>
+// ── Mobile menu ─────────────────────────────────────────────
+const btn      = document.getElementById('menu-btn');
+const mobileM  = document.getElementById('mobile-menu');
+const iconOpen = document.getElementById('icon-open');
+const iconClose= document.getElementById('icon-close');
+btn?.addEventListener('click', () => {
+    mobileM.classList.toggle('hidden');
+    iconOpen.classList.toggle('hidden');
+    iconClose.classList.toggle('hidden');
+});
+mobileM?.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+        mobileM.classList.add('hidden');
+        iconOpen.classList.remove('hidden');
+        iconClose.classList.add('hidden');
+    });
+});
 
-        // Close mobile menu on link click
-        menu?.querySelectorAll('a').forEach(a => {
-            a.addEventListener('click', () => {
-                menu.classList.add('hidden');
-                iconOpen.classList.remove('hidden');
-                iconClose.classList.add('hidden');
+// ── User dropdown ────────────────────────────────────────────
+function toggleUserMenu() {
+    document.getElementById('user-dropdown')?.classList.toggle('hidden');
+}
+document.addEventListener('click', e => {
+    const wrapper = document.getElementById('user-menu-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('user-dropdown')?.classList.add('hidden');
+    }
+});
+
+// ── Toast helper ─────────────────────────────────────────────
+function showToast(msg, isError = false) {
+    const toast    = document.getElementById('toast');
+    const inner    = document.getElementById('toast-inner');
+    const msgEl    = document.getElementById('toast-msg');
+    msgEl.textContent = msg;
+    inner.className = `${isError ? 'bg-red-700' : 'bg-ink'} text-white text-sm font-medium px-5 py-3 rounded-full shadow-xl flex items-center gap-2 whitespace-nowrap`;
+    toast.classList.remove('opacity-0','translate-y-4');
+    toast.classList.add('opacity-100','translate-y-0');
+    setTimeout(() => {
+        toast.classList.add('opacity-0','translate-y-4');
+        toast.classList.remove('opacity-100','translate-y-0');
+    }, 3000);
+}
+
+// ── CSRF helper ──────────────────────────────────────────────
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;
+
+// ── Cart state ───────────────────────────────────────────────
+const isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
+
+function updateCartBadge(count) {
+    const badge = document.getElementById('cart-badge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// ── CartDrawer ───────────────────────────────────────────────
+const CartDrawer = {
+    open() {
+        const drawer = document.getElementById('cart-drawer');
+        const overlay= document.getElementById('cart-overlay');
+        drawer?.classList.remove('translate-x-full');
+        overlay?.classList.remove('opacity-0','pointer-events-none');
+        if (isLoggedIn) this.load();
+    },
+    close() {
+        document.getElementById('cart-drawer')?.classList.add('translate-x-full');
+        const overlay = document.getElementById('cart-overlay');
+        overlay?.classList.add('opacity-0','pointer-events-none');
+    },
+    async load() {
+        if (!isLoggedIn) return;
+        const body = document.getElementById('cart-body');
+        const foot = document.getElementById('cart-footer');
+        body.innerHTML = `<div class="flex items-center justify-center py-16"><div class="w-6 h-6 border-2 border-wood border-t-transparent rounded-full animate-spin"></div></div>`;
+
+        try {
+            const res  = await fetch('/cart', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } });
+            const data = await res.json();
+
+            if (!data.items?.length) {
+                body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-16 text-center px-6">
+                        <div class="w-16 h-16 bg-sand rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                        </div>
+                        <p class="font-serif text-xl text-ink mb-1">Keranjang kosong</p>
+                        <p class="text-sm text-muted">Tambahkan produk dari katalog</p>
+                        <a href="/katalog" onclick="CartDrawer.close()"
+                           class="mt-5 bg-wood text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-wood-dark transition-colors">
+                            Lihat Katalog
+                        </a>
+                    </div>`;
+                foot.classList.add('hidden');
+                return;
+            }
+
+            body.innerHTML = data.items.map(item => `
+                <div class="flex gap-3 py-4 border-b border-sand" id="cart-item-${item.id}">
+                    <div class="w-16 h-16 rounded-xl overflow-hidden bg-sand shrink-0">
+                        ${item.image
+                            ? `<img src="${item.image}" class="w-full h-full object-cover">`
+                            : `<div class="w-full h-full flex items-end justify-center pb-1"><div class="w-8 h-8 bg-wood/60 rounded-t-lg"></div></div>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-olive font-medium">${item.kategori ?? ''}</p>
+                        <p class="text-sm font-semibold text-ink leading-snug truncate">${item.name}</p>
+                        <p class="text-sm text-wood font-medium mt-0.5">${item.harga_fmt}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <button onclick="CartDrawer.changeQty(${item.id}, ${item.jumlah - 1}, ${item.stok})"
+                                    class="w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">−</button>
+                            <span id="qty-${item.id}" class="text-sm font-semibold w-5 text-center">${item.jumlah}</span>
+                            <button onclick="CartDrawer.changeQty(${item.id}, ${item.jumlah + 1}, ${item.stok})"
+                                    class="w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">+</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end justify-between shrink-0">
+                        <button onclick="CartDrawer.remove(${item.id})"
+                                class="p-1 hover:text-red-500 transition-colors text-muted" aria-label="Hapus">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <p id="sub-${item.id}" class="text-sm font-semibold text-ink">${item.subtotal_fmt}</p>
+                    </div>
+                </div>`).join('');
+
+            document.getElementById('cart-total').textContent = data.total_fmt;
+            foot.classList.remove('hidden');
+            updateCartBadge(data.total_items);
+        } catch(e) {
+            body.innerHTML = `<p class="text-center text-muted py-10 text-sm">Gagal memuat keranjang.</p>`;
+        }
+    },
+    async add(barangId, jumlah = 1) {
+        if (!isLoggedIn) {
+            window.location.href = '/login';
+            return;
+        }
+        try {
+            const res  = await fetch('/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ barang_id: barangId, jumlah }),
             });
-        });
-    </script>
-    @stack('scripts')
+            const data = await res.json();
+            if (data.success) {
+                updateCartBadge(data.total_items);
+                showToast(data.message);
+            } else {
+                showToast(data.message, true);
+            }
+        } catch(e) {
+            showToast('Gagal menambahkan ke keranjang.', true);
+        }
+    },
+    async changeQty(itemId, newQty, maxStok) {
+        if (newQty < 1) { this.remove(itemId); return; }
+        if (newQty > maxStok) { showToast('Melebihi stok yang tersedia.', true); return; }
+        try {
+            const res  = await fetch(`/cart/item/${itemId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ jumlah: newQty }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`qty-${itemId}`).textContent = newQty;
+                document.getElementById(`sub-${itemId}`).textContent = data.subtotal_fmt;
+                document.getElementById('cart-total').textContent    = data.total_fmt;
+                updateCartBadge(data.total_items);
+            } else {
+                showToast(data.message, true);
+            }
+        } catch(e) {}
+    },
+    async remove(itemId) {
+        try {
+            const res  = await fetch(`/cart/item/${itemId}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`cart-item-${itemId}`)?.remove();
+                document.getElementById('cart-total').textContent = data.total_fmt;
+                updateCartBadge(data.total_items);
+                if (data.total_items === 0) this.load();
+            }
+        } catch(e) {}
+    },
+};
+
+// Init badge on load
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!isLoggedIn) return;
+    try {
+        const res  = await fetch('/cart', { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        if (data.success) updateCartBadge(data.total_items);
+    } catch(e) {}
+});
+</script>
+@stack('scripts')
 </body>
 </html>

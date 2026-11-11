@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
+
+class AuthController extends Controller
+{
+    // ── Register ────────────────────────────────────────────
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::create([
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->intended(route('home'))
+            ->with('success', 'Akun berhasil dibuat. Selamat berbelanja!');
+    }
+
+    // ── Login ────────────────────────────────────────────────
+    public function showLogin()
+    {
+        return view('auth.login');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('home'))
+                ->with('success', 'Selamat datang kembali!');
+        }
+
+        return back()->withErrors(['email' => 'Email atau password salah.'])->onlyInput('email');
+    }
+
+    // ── Logout ───────────────────────────────────────────────
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('home');
+    }
+
+    // ── Google OAuth ─────────────────────────────────────────
+    public function googleRedirect()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function googleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Exception $e) {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Login Google gagal. Silakan coba lagi.']);
+        }
+
+        $user = User::updateOrCreate(
+            ['google_id' => $googleUser->getId()],
+            [
+                'name'   => $googleUser->getName(),
+                'email'  => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
+                // password null — user google tidak butuh password
+            ]
+        );
+
+        Auth::login($user, true);
+
+        return redirect()->intended(route('home'))
+            ->with('success', 'Login berhasil!');
+    }
+}
