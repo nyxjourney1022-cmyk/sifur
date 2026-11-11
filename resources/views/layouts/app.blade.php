@@ -215,9 +215,9 @@
 {{-- ══ CONTENT ═══════════════════════════════════════════════ --}}
 <main class="pt-16">
     @if(session('success'))
-    <div class="bg-green-50 border-b border-green-200 text-green-700 text-sm text-center px-4 py-2.5">
-        {{ session('success') }}
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => showToast(@json(session('success'))));
+    </script>
     @endif
     @yield('content')
 </main>
@@ -490,6 +490,225 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch(e) {}
 });
 </script>
+{{-- ══ CS CHAT WIDGET ══════════════════════════════════════════ --}}
+<div id="cs-widget" class="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-3">
+
+    {{-- Chat window --}}
+    <div id="cs-window"
+         class="hidden w-[340px] bg-white rounded-[1.5rem] shadow-2xl border border-sand overflow-hidden flex flex-col"
+         style="max-height: 520px;">
+
+        {{-- Header --}}
+        <div class="bg-wood px-5 py-4 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-white font-semibold text-sm leading-tight">Customer Service</p>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                        <span class="text-white/70 text-xs">Online sekarang</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="CSWidget.close()" class="p-1.5 rounded-full hover:bg-white/10 transition-colors" aria-label="Tutup">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Messages --}}
+        <div id="cs-messages" class="flex-1 overflow-y-auto scroll-y px-4 py-4 space-y-3 bg-cream/40"
+             style="min-height: 280px; max-height: 340px;">
+            {{-- Welcome bubble --}}
+            <div class="flex gap-2 items-end">
+                <div class="w-7 h-7 rounded-full bg-wood shrink-0 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-2xl rounded-bl-sm px-3.5 py-2.5 shadow-sm max-w-[220px]">
+                    <p class="text-sm text-ink leading-relaxed">Halo! 👋 Ada yang bisa saya bantu seputar produk furniture kami?</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Suggested questions --}}
+        <div id="cs-suggestions" class="px-4 py-2 flex gap-2 overflow-x-auto scroll-x shrink-0 border-t border-sand/60">
+            @foreach(['Produk apa saja?', 'Cara pesan?', 'Ada diskon?', 'Lokasi toko?'] as $q)
+            <button onclick="CSWidget.sendSuggestion(this, '{{ $q }}')"
+                    class="shrink-0 text-xs font-medium text-wood border border-wood/30 bg-wood/5 hover:bg-wood hover:text-white px-3 py-1.5 rounded-full transition-colors whitespace-nowrap">
+                {{ $q }}
+            </button>
+            @endforeach
+        </div>
+
+        {{-- Input --}}
+        <div class="px-4 py-3 border-t border-sand flex gap-2 shrink-0 bg-white">
+            <input id="cs-input" type="text"
+                   placeholder="Tulis pesan..."
+                   onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); CSWidget.send(); }"
+                   class="flex-1 bg-sand border-0 rounded-full px-4 py-2.5 text-sm focus:ring-2 focus:ring-wood focus:outline-none text-ink placeholder-muted">
+            <button onclick="CSWidget.send()"
+                    class="w-9 h-9 bg-wood hover:bg-wood-dark text-white rounded-full flex items-center justify-center transition-colors shrink-0" aria-label="Kirim">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    {{-- Bubble toggle button --}}
+    <button id="cs-btn" onclick="CSWidget.toggle()"
+            class="w-14 h-14 bg-wood hover:bg-wood-dark text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-105 relative"
+            aria-label="Customer Service">
+        <svg id="cs-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+        <svg id="cs-icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        {{-- Unread dot --}}
+        <span id="cs-unread" class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full hidden"></span>
+    </button>
+</div>
+
+<script>
+const CSWidget = {
+    history:  [],
+    isOpen:   false,
+    isTyping: false,
+
+    toggle() {
+        this.isOpen ? this.close() : this.open();
+    },
+    open() {
+        this.isOpen = true;
+        document.getElementById('cs-window').classList.remove('hidden');
+        document.getElementById('cs-window').classList.add('flex');
+        document.getElementById('cs-icon-open').classList.add('hidden');
+        document.getElementById('cs-icon-close').classList.remove('hidden');
+        document.getElementById('cs-unread').classList.add('hidden');
+        setTimeout(() => document.getElementById('cs-input')?.focus(), 100);
+        this.scrollBottom();
+    },
+    close() {
+        this.isOpen = false;
+        document.getElementById('cs-window').classList.add('hidden');
+        document.getElementById('cs-window').classList.remove('flex');
+        document.getElementById('cs-icon-open').classList.remove('hidden');
+        document.getElementById('cs-icon-close').classList.add('hidden');
+    },
+
+    scrollBottom() {
+        const el = document.getElementById('cs-messages');
+        if (el) el.scrollTop = el.scrollHeight;
+    },
+
+    addBubble(role, text) {
+        const msgs   = document.getElementById('cs-messages');
+        const isUser = role === 'user';
+        const div    = document.createElement('div');
+        div.className = `flex gap-2 items-end ${isUser ? 'flex-row-reverse' : ''}`;
+        div.innerHTML = `
+            ${!isUser ? `<div class="w-7 h-7 rounded-full bg-wood shrink-0 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
+            </div>` : ''}
+            <div class="${isUser
+                ? 'bg-wood text-white rounded-2xl rounded-br-sm'
+                : 'bg-white text-ink rounded-2xl rounded-bl-sm shadow-sm'} px-3.5 py-2.5 max-w-[220px]">
+                <p class="text-sm leading-relaxed">${text.replace(/\n/g, '<br>')}</p>
+            </div>`;
+        msgs.appendChild(div);
+        this.scrollBottom();
+    },
+
+    addTyping() {
+        const msgs = document.getElementById('cs-messages');
+        const div  = document.createElement('div');
+        div.id = 'cs-typing';
+        div.className = 'flex gap-2 items-end';
+        div.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-wood shrink-0 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
+            </div>
+            <div class="bg-white rounded-2xl rounded-bl-sm shadow-sm px-4 py-3 flex gap-1 items-center">
+                <span class="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                <span class="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style="animation-delay:300ms"></span>
+            </div>`;
+        msgs.appendChild(div);
+        this.scrollBottom();
+    },
+
+    removeTyping() {
+        document.getElementById('cs-typing')?.remove();
+    },
+
+    async send() {
+        const input = document.getElementById('cs-input');
+        const msg   = input?.value?.trim();
+        if (!msg || this.isTyping) return;
+
+        input.value = '';
+        this.isTyping = true;
+
+        // Sembunyikan suggestions setelah kirim pertama
+        document.getElementById('cs-suggestions')?.classList.add('hidden');
+
+        this.addBubble('user', msg);
+        this.addTyping();
+
+        try {
+            const res  = await fetch('/chat', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body:    JSON.stringify({ message: msg, history: this.history }),
+            });
+            const data = await res.json();
+
+            this.removeTyping();
+
+            const reply = data.success ? data.reply : (data.message ?? 'Maaf, terjadi kesalahan.');
+            this.addBubble('assistant', reply);
+
+            // Simpan ke history (maks 10 pasang)
+            this.history.push({ role: 'user', content: msg });
+            this.history.push({ role: 'assistant', content: reply });
+            if (this.history.length > 20) this.history = this.history.slice(-20);
+
+        } catch(e) {
+            this.removeTyping();
+            this.addBubble('assistant', 'Koneksi gagal. Silakan coba lagi.');
+        } finally {
+            this.isTyping = false;
+            input?.focus();
+        }
+    },
+
+    sendSuggestion(btn, text) {
+        const input = document.getElementById('cs-input');
+        if (input) input.value = text;
+        this.send();
+    },
+};
+
+// Tampilkan unread dot setelah 3 detik kalau belum dibuka
+setTimeout(() => {
+    if (!CSWidget.isOpen) {
+        document.getElementById('cs-unread')?.classList.remove('hidden');
+    }
+}, 3000);
+</script>
+
 @stack('scripts')
 </body>
 </html>

@@ -10,6 +10,7 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ──────────────────────────────────────────────
@@ -59,6 +60,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/pesanan',       [OrderController::class, 'index'])->name('pesanan');
     Route::get('/pesanan/{id}',  [OrderController::class, 'show'])->name('pesanan.show');
 });
+
+// ── Chat CS (public, no auth required) ───────────────────────
+Route::post('/chat', [ChatController::class, 'send'])->name('chat.send');
 
 // ── API: Backend CRUD (tidak perlu auth untuk demo, bisa ditambah middleware) ──
 Route::prefix('api')->group(function () {
