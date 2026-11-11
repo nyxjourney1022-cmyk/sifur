@@ -56,6 +56,49 @@ class HomeController extends Controller
         ]);
     }
 
+    public function katalogData(Request $request)
+    {
+        $query = Barang::with('kayu')->where('stok_barang', '>', 0);
+
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+        if ($request->filled('kayu')) {
+            $query->whereHas('kayu', fn($q) => $q->where('jenis_kayu', $request->kayu));
+        }
+
+        match ($request->get('sort', 'terbaru')) {
+            'harga_asc'  => $query->orderBy('harga', 'asc'),
+            'harga_desc' => $query->orderBy('harga', 'desc'),
+            'nama'       => $query->orderBy('nama_barang', 'asc'),
+            default      => $query->latest(),
+        };
+
+        $products = $query->get()->map(fn($b) => [
+            'id'       => $b->id,
+            'name'     => $b->nama_barang,
+            'price'    => $b->harga,
+            'kategori' => $b->kategori,
+            'stok'     => $b->stok_barang,
+            'kayu'     => $b->kayu?->jenis_kayu,
+            'image'    => $b->gambar_url,
+        ]);
+
+        $byCategory       = $products->groupBy('kategori');
+        $selectedKategori = $request->get('kategori');
+        $furniture        = Furniture::first();
+        $whatsapp         = $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx';
+
+        $html = view('partials.katalog-content', compact(
+            'products', 'byCategory', 'selectedKategori', 'whatsapp'
+        ))->render();
+
+        return response()->json([
+            'html'  => $html,
+            'count' => $products->count(),
+        ]);
+    }
+
     public function katalog(Request $request)
     {
         $query = Barang::with('kayu')->where('stok_barang', '>', 0);

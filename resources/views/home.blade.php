@@ -15,7 +15,7 @@
         <div class="absolute bottom-0 -left-24 w-80 h-80 rounded-full bg-sand opacity-40"></div>
     </div>
 
-    <div class="relative max-w-7xl mx-auto px-6 lg:px-8 w-full py-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8 w-full py-1 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
         {{-- Text --}}
         <div class="fade-up">
@@ -58,7 +58,7 @@
         </div>
 
         {{-- Visual --}}
-        <div class="fade-up-2 relative hidden lg:block">
+        <div class="fade-up-2 relative hidden lg:block -mt-10">
             <div class="relative w-full aspect-square max-w-lg mx-auto">
 
                 {{-- Foto hero --}}
@@ -118,26 +118,61 @@
             @foreach($categories as $i => $category)
             @php
                 $colors = [
-                    'bg-wood text-white',
-                    'bg-olive text-white',
-                    'bg-ink text-white',
-                    'bg-wood-dark text-white',
+                    'bg-wood',
+                    'bg-olive',
+                    'bg-ink',
+                    'bg-wood-dark',
                 ];
                 $color = $colors[$i % 4];
+
+                // Mapping kategori ke file gambar
+                $imageMap = [
+                    'ruang tamu'  => 'Ruang tamu.jpg',
+                    'kamar tidur' => 'Kamar tidur.jpg',
+                    'ruang makan' => 'Ruang Makan.jpg',
+                    'ruang kerja' => 'Ruang kantor.jpg',
+                ];
+                $imgFile = $imageMap[strtolower(data_get($category, 'name'))] ?? null;
+                $imgUrl  = $imgFile ? asset('storage/image/' . $imgFile) : null;
             @endphp
             <a href="{{ url('/katalog') }}?kategori={{ urlencode(data_get($category, 'name')) }}"
-               class="group {{ $color }} rounded-3xl p-7 min-h-[160px] flex flex-col justify-end hover:scale-[1.02] transition-transform cursor-pointer">
-                <strong class="font-serif text-2xl font-medium block leading-tight">{{ data_get($category, 'name') }}</strong>
-                <span class="text-sm opacity-75 mt-1">{{ data_get($category, 'room') }}</span>
+               class="group relative {{ $color }} rounded-3xl min-h-[160px] flex flex-col justify-end overflow-hidden transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
+
+                {{-- Background gambar --}}
+                @if($imgUrl)
+                <img src="{{ $imgUrl }}"
+                     alt="{{ data_get($category, 'name') }}"
+                     class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-300">
+                @endif
+
+                {{-- Gradient overlay --}}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+                {{-- Text --}}
+                <div class="relative p-7">
+                    <strong class="font-serif text-2xl font-medium block leading-tight text-white">{{ data_get($category, 'name') }}</strong>
+                    <span class="text-sm text-white/70 mt-1 block">{{ data_get($category, 'room') }}</span>
+                </div>
             </a>
             @endforeach
         </div>
         @else
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @foreach([['Ruang Tamu','Living Room','bg-wood'],['Kamar Tidur','Bedroom','bg-olive'],['Ruang Makan','Dining Room','bg-ink'],['Ruang Kerja','Home Office','bg-wood-dark']] as $cat)
-            <div class="{{ $cat[2] }} text-white rounded-3xl p-7 min-h-[160px] flex flex-col justify-end">
-                <strong class="font-serif text-2xl font-medium">{{ $cat[0] }}</strong>
-                <span class="text-sm opacity-75 mt-1">{{ $cat[1] }}</span>
+            @foreach([
+                ['Ruang Tamu',  'Living Room',  'bg-wood',      'Ruang tamu.jpg'],
+                ['Kamar Tidur', 'Bedroom',      'bg-olive',     'Kamar tidur.jpg'],
+                ['Ruang Makan', 'Dining Room',  'bg-ink',       'Ruang Makan.jpg'],
+                ['Ruang Kerja', 'Home Office',  'bg-wood-dark', 'Ruang kantor.jpg'],
+            ] as $cat)
+            <div class="relative {{ $cat[2] }} text-white rounded-3xl min-h-[160px] flex flex-col justify-end overflow-hidden">
+                <img src="{{ asset('storage/image/' . $cat[3]) }}"
+                     alt="{{ $cat[0] }}"
+                     class="absolute inset-0 w-full h-full object-cover opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                <div class="relative p-7">
+                    <strong class="font-serif text-2xl font-medium text-white">{{ $cat[0] }}</strong>
+                    <span class="text-sm text-white/70 mt-1 block">{{ $cat[1] }}</span>
+                </div>
             </div>
             @endforeach
         </div>
@@ -377,5 +412,7 @@
     btnRight?.addEventListener('click', () => { scrollEl.scrollBy({ left:  STEP, behavior: 'smooth' }); });
     scrollEl?.addEventListener('scroll', updateButtons);
     updateButtons();
+
+
 </script>
 @endpush

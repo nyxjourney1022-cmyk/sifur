@@ -10,21 +10,20 @@
 ═══════════════════════════════════════════════════════ --}}
 <section class="bg-sand pt-16">
     <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-                <span class="text-xs font-semibold tracking-widest uppercase text-olive">Koleksi Lengkap</span>
-                <h1 class="font-serif text-5xl md:text-6xl font-medium text-ink mt-2">Katalog Produk</h1>
-                <p class="text-muted mt-3 text-lg">
-                    {{ $products->count() }} produk tersedia untuk Anda
-                </p>
-            </div>
-            <a href="{{ url('/') }}"
-               class="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink transition-colors self-start md:self-auto">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-                </svg>
-                Kembali ke Beranda
-            </a>
+        {{-- Tombol kembali — kiri atas --}}
+        <a href="{{ route('home') }}"
+           class="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink transition-colors mb-6">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+            </svg>
+            Kembali ke Beranda
+        </a>
+        <div>
+            <span class="text-xs font-semibold tracking-widest uppercase text-olive">Koleksi Lengkap</span>
+            <h1 class="font-serif text-5xl md:text-6xl font-medium text-ink mt-2">Katalog Produk</h1>
+            <p class="text-muted mt-3 text-lg" id="product-count">
+                {{ $products->count() }} produk tersedia untuk Anda
+            </p>
         </div>
     </div>
 </section>
@@ -34,134 +33,45 @@
 ═══════════════════════════════════════════════════════ --}}
 <div class="sticky top-16 z-40 bg-cream/90 backdrop-blur-md border-b border-sand shadow-sm">
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
-        <form method="GET" action="{{ url('/katalog') }}" id="filter-form"
-              class="flex flex-wrap items-center gap-3 py-4">
+        <div class="flex flex-wrap items-center gap-3 py-4">
 
             {{-- Kategori pills --}}
             <div class="flex items-center gap-2 overflow-x-auto scroll-x pb-1 flex-1 min-w-0">
-                <a href="{{ url('/katalog') }}{{ $selectedSort ? '?sort='.$selectedSort : '' }}"
-                   class="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
-                          {{ !$selectedKategori ? 'bg-ink text-white' : 'bg-sand hover:bg-ink/10 text-muted' }}">
+                <button onclick="filterKatalog('')"
+                   class="cat-pill shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+                          {{ !$selectedKategori ? 'bg-ink text-white' : 'bg-sand hover:bg-ink/10 text-muted' }}"
+                   data-kategori="">
                     Semua
-                </a>
+                </button>
                 @foreach($categories as $cat)
-                <a href="{{ url('/katalog') }}?kategori={{ urlencode($cat) }}{{ $selectedSort ? '&sort='.$selectedSort : '' }}"
-                   class="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
-                          {{ $selectedKategori === $cat ? 'bg-wood text-white' : 'bg-sand hover:bg-wood/10 text-muted' }}">
+                <button onclick="filterKatalog('{{ $cat }}')"
+                   class="cat-pill shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+                          {{ $selectedKategori === $cat ? 'bg-wood text-white' : 'bg-sand hover:bg-wood/10 text-muted' }}"
+                   data-kategori="{{ $cat }}">
                     {{ $cat }}
-                </a>
+                </button>
                 @endforeach
             </div>
 
             {{-- Sort dropdown --}}
-            <select name="sort" onchange="this.form.submit()"
+            <select id="sort-select"
+                    onchange="filterKatalog(currentKategori, this.value)"
                     class="shrink-0 bg-sand border-0 text-sm font-medium text-ink rounded-full px-4 py-2 cursor-pointer focus:ring-2 focus:ring-wood focus:outline-none appearance-none pr-8"
                     style="background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em;">
-                @if($selectedKategori)
-                <input type="hidden" name="kategori" value="{{ $selectedKategori }}">
-                @endif
                 <option value="terbaru"    {{ $selectedSort === 'terbaru'    ? 'selected' : '' }}>Terbaru</option>
                 <option value="harga_asc"  {{ $selectedSort === 'harga_asc'  ? 'selected' : '' }}>Harga: Termurah</option>
                 <option value="harga_desc" {{ $selectedSort === 'harga_desc' ? 'selected' : '' }}>Harga: Termahal</option>
                 <option value="nama"       {{ $selectedSort === 'nama'       ? 'selected' : '' }}>Nama A–Z</option>
             </select>
-        </form>
+        </div>
     </div>
 </div>
 
 {{-- ═══════════════════════════════════════════════════════
      KONTEN KATALOG
 ═══════════════════════════════════════════════════════ --}}
-<div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-
-    @if($products->isEmpty())
-    {{-- Empty state --}}
-    <div class="text-center py-24">
-        <div class="w-20 h-20 bg-sand rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-10 h-10 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
-            </svg>
-        </div>
-        <h3 class="font-serif text-2xl font-medium text-ink mb-2">Produk tidak ditemukan</h3>
-        <p class="text-muted mb-6">Coba ubah filter atau lihat semua kategori.</p>
-        <a href="{{ url('/katalog') }}"
-           class="inline-flex items-center gap-2 bg-wood text-white font-semibold px-6 py-3 rounded-full hover:bg-wood-dark transition-colors">
-            Lihat Semua Produk
-        </a>
-    </div>
-
-    @elseif($selectedKategori)
-    {{-- ── Mode: satu kategori dipilih → Grid biasa ── --}}
-    <div class="mb-10">
-        <h2 class="font-serif text-3xl font-medium text-ink">{{ $selectedKategori }}</h2>
-        <p class="text-muted mt-1">{{ $products->count() }} produk ditemukan</p>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        @foreach($products as $product)
-            @include('partials.product-card', ['product' => $product])
-        @endforeach
-    </div>
-
-    @else
-    {{-- ── Mode: semua kategori → Horizontal scroll per kategori ── --}}
-    @foreach($byCategory as $kategori => $items)
-    <div class="mb-16">
-        {{-- Section header --}}
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h2 class="font-serif text-3xl font-medium text-ink">{{ $kategori }}</h2>
-                <p class="text-sm text-muted mt-0.5">{{ $items->count() }} produk</p>
-            </div>
-            <a href="{{ url('/katalog') }}?kategori={{ urlencode($kategori) }}"
-               class="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-wood hover:text-wood-dark transition-colors">
-                Lihat semua
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                </svg>
-            </a>
-        </div>
-
-        {{-- Horizontal scroll row --}}
-        <div class="relative -mx-6 lg:-mx-8">
-            <div class="hs-row flex gap-5 overflow-x-auto scroll-x snap-x-mandatory pb-3 px-6 lg:px-8">
-                @foreach($items as $product)
-                <div class="snap-start shrink-0 w-64 sm:w-72">
-                    @include('partials.product-card', ['product' => $product, 'compact' => true])
-                </div>
-                @endforeach
-
-                {{-- See more card --}}
-                <div class="snap-start shrink-0 w-48 flex items-center justify-center">
-                    <a href="{{ url('/katalog') }}?kategori={{ urlencode($kategori) }}"
-                       class="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-dashed border-sand hover:border-wood transition-colors group text-center w-full h-full min-h-[280px] justify-center">
-                        <div class="w-12 h-12 rounded-full bg-sand group-hover:bg-wood/10 flex items-center justify-center transition-colors">
-                            <svg class="w-5 h-5 text-muted group-hover:text-wood transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                            </svg>
-                        </div>
-                        <span class="text-xs font-semibold text-muted group-hover:text-wood transition-colors">Lihat semua {{ $kategori }}</span>
-                    </a>
-                </div>
-            </div>
-
-            {{-- Scroll buttons per row --}}
-            <button class="hs-btn-left absolute left-1 top-1/2 -translate-y-6 w-9 h-9 bg-white shadow-lg rounded-full flex items-center justify-center hover:bg-sand transition-colors z-10 opacity-0 pointer-events-none"
-                    aria-label="Scroll kiri">
-                <svg class="w-4 h-4 text-ink" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-                </svg>
-            </button>
-            <button class="hs-btn-right absolute right-1 top-1/2 -translate-y-6 w-9 h-9 bg-white shadow-lg rounded-full flex items-center justify-center hover:bg-sand transition-colors z-10"
-                    aria-label="Scroll kanan">
-                <svg class="w-4 h-4 text-ink" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-    @endforeach
-    @endif
-
+<div id="katalog-content" class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+    @include('partials.katalog-content', ['products' => $products, 'byCategory' => $byCategory, 'selectedKategori' => $selectedKategori, 'whatsapp' => $whatsapp])
 </div>
 
 {{-- ═══════════════════════════════════════════════════════
@@ -190,28 +100,85 @@
 
 @push('scripts')
 <script>
-    // Horizontal scroll buttons per row
-    document.querySelectorAll('.mb-16').forEach(section => {
+// ── State ─────────────────────────────────────────────────────
+let currentKategori = @json($selectedKategori ?? '');
+let currentSort     = @json($selectedSort ?? 'terbaru');
+
+// ── Filter utama (kategori + sort) ────────────────────────────
+async function filterKatalog(kategori = '', sort = null) {
+    currentKategori = kategori ?? '';
+    if (sort !== null) currentSort = sort;
+
+    // Update pill aktif
+    document.querySelectorAll('.cat-pill').forEach(el => {
+        const isActive = el.dataset.kategori === currentKategori;
+        el.className = el.className
+            .replace(/bg-ink|bg-wood|bg-sand|text-white|text-muted/g, '').trim();
+        if (isActive && !currentKategori) {
+            el.classList.add('bg-ink', 'text-white');
+        } else if (isActive && currentKategori) {
+            el.classList.add('bg-wood', 'text-white');
+        } else {
+            el.classList.add('bg-sand', 'text-muted');
+        }
+    });
+
+    // Update sort select
+    const sel = document.getElementById('sort-select');
+    if (sel) sel.value = currentSort;
+
+    // Update URL tanpa reload
+    const params = new URLSearchParams();
+    if (currentKategori) params.set('kategori', currentKategori);
+    if (currentSort && currentSort !== 'terbaru') params.set('sort', currentSort);
+    history.pushState({}, '', '/katalog' + (params.toString() ? '?' + params.toString() : ''));
+
+    // Fetch produk via AJAX
+    const content = document.getElementById('katalog-content');
+    content.style.opacity = '0.4';
+    content.style.transition = 'opacity .2s';
+
+    try {
+        const res  = await fetch('/katalog/data?' + params.toString(), {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+        });
+        const data = await res.json();
+
+        const countEl = document.getElementById('product-count');
+        if (countEl) countEl.textContent = data.count + ' produk tersedia untuk Anda';
+
+        content.innerHTML = data.html;
+        content.style.opacity = '1';
+        initScrollButtons();
+    } catch(e) {
+        content.style.opacity = '1';
+    }
+}
+
+// ── Horizontal scroll buttons ─────────────────────────────────
+function initScrollButtons() {
+    document.querySelectorAll('.hs-section').forEach(section => {
         const row      = section.querySelector('.hs-row');
         const btnLeft  = section.querySelector('.hs-btn-left');
         const btnRight = section.querySelector('.hs-btn-right');
         const STEP     = 300;
-
         if (!row || !btnLeft || !btnRight) return;
 
         function update() {
             const atStart = row.scrollLeft <= 10;
             const atEnd   = row.scrollLeft + row.clientWidth >= row.scrollWidth - 10;
-            btnLeft.classList.toggle('opacity-0',          atStart);
-            btnLeft.classList.toggle('pointer-events-none', atStart);
-            btnRight.classList.toggle('opacity-0',          atEnd);
+            btnLeft.classList.toggle('opacity-0',            atStart);
+            btnLeft.classList.toggle('pointer-events-none',  atStart);
+            btnRight.classList.toggle('opacity-0',           atEnd);
             btnRight.classList.toggle('pointer-events-none', atEnd);
         }
-
-        btnLeft.addEventListener('click',  () => row.scrollBy({ left: -STEP, behavior: 'smooth' }));
-        btnRight.addEventListener('click', () => row.scrollBy({ left:  STEP, behavior: 'smooth' }));
+        btnLeft.onclick  = () => row.scrollBy({ left: -STEP, behavior: 'smooth' });
+        btnRight.onclick = () => row.scrollBy({ left:  STEP, behavior: 'smooth' });
         row.addEventListener('scroll', update);
         update();
     });
+}
+
+document.addEventListener('DOMContentLoaded', initScrollButtons);
 </script>
 @endpush

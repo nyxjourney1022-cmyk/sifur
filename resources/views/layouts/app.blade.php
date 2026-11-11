@@ -280,8 +280,12 @@
 </footer>
 
 <script>
-// ── Mobile menu ─────────────────────────────────────────────
-const btn      = document.getElementById('menu-btn');
+// Scroll ke atas saat halaman load/refresh
+if (history.scrollRestoration) history.scrollRestoration = 'manual';
+window.addEventListener('load', () => window.scrollTo(0, 0));
+
+// Mobile menu toggle
+const btn       = document.getElementById('menu-btn');
 const mobileM  = document.getElementById('mobile-menu');
 const iconOpen = document.getElementById('icon-open');
 const iconClose= document.getElementById('icon-close');

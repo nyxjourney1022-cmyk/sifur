@@ -14,8 +14,9 @@ use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ──────────────────────────────────────────────
-Route::get('/',        [HomeController::class, 'index'])->name('home');
-Route::get('/katalog', [HomeController::class, 'katalog'])->name('katalog');
+Route::get('/',             [HomeController::class, 'index'])->name('home');
+Route::get('/katalog',      [HomeController::class, 'katalog'])->name('katalog');
+Route::get('/katalog/data', [HomeController::class, 'katalogData'])->name('katalog.data');
 
 // ── Auth ──────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -62,7 +63,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // ── Chat CS (public, no auth required) ───────────────────────
-Route::post('/chat', [ChatController::class, 'send'])->name('chat.send');
+Route::post('/chat',                    [ChatController::class, 'send'])->name('chat.send');
+Route::post('/chat/rekomendasi',        [ChatController::class, 'rekomendasiKategori'])->name('chat.rekomendasi');
 
 // ── API: Backend CRUD (tidak perlu auth untuk demo, bisa ditambah middleware) ──
 Route::prefix('api')->group(function () {

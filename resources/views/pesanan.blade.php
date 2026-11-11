@@ -5,6 +5,13 @@
 <div class="max-w-4xl mx-auto px-6 lg:px-8 py-12">
 
     <div class="mb-8">
+        <a href="{{ route('home') }}"
+           class="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink transition-colors mb-4">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+            </svg>
+            Kembali ke Beranda
+        </a>
         <h1 class="font-serif text-4xl font-medium text-ink">Pesanan Saya</h1>
         <p class="text-muted mt-1">Riwayat semua pesanan kamu</p>
     </div>
