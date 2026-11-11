@@ -8,7 +8,7 @@ use App\Http\Controllers\reservasiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
 
 // Get Data
@@ -17,9 +17,9 @@ Route::get('/barang',[barangController::class, 'index']);
 Route::get('/kayu',[kayuController::class, 'index']);
 
 // Update
-Route::put('/reservasi/{id}',[reservasiController::class, 'Update']);
-Route::put('/barang/{id}',[barangController::class, 'Update']);
-Route::put('/kayu/{id}',[kayuController::class, 'Update']);
+Route::put('/reservasi/{id}',[reservasiController::class, 'update']);
+Route::put('/barang/{id}',[barangController::class, 'update']);
+Route::put('/kayu/{id}',[kayuController::class, 'update']);
 
 // Destroy
 Route::delete('/reservasi/{id}',[reservasiController::class,'destroy']);

@@ -25,7 +25,7 @@ class barangController extends Controller
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
-            'stock_barang' => 'required|integer|min:1',
+            'stok_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
             'jenis_kayu' => 'required|string|max:100'
         ]);
@@ -36,7 +36,8 @@ class barangController extends Controller
             );
             $barang = Barang::create([
                 'nama_barang' => $validate['nama_barang'],
-                'stock_barang' => $validate['stock_barang'],
+                'kategori' => $validate['kategori'],
+                'stok_barang' => $validate['stok_barang'],
                 'harga' => $validate['harga'],
                 'kayu_id' => $kayu->id
             ]);
@@ -66,7 +67,7 @@ class barangController extends Controller
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
-            'stock_barang' => 'required|integer|min:1',
+            'stoc_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
             'jenis_kayu' => 'required|string|max:100'
         ]);
@@ -78,7 +79,7 @@ class barangController extends Controller
             $barang->update([
                 'nama_barang' => $validate['nama_barang'],
                 'kategori' => $validate['kategori'],
-                'stock_barang' => $validate['stock_barang'],
+                'stok_barang' => $validate['stok_barang'],
                 'harga' => $validate['harga'],
                 'kayu_id'=> $kayu->id
             ]);

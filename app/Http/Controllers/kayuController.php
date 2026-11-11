@@ -24,7 +24,7 @@ class kayuController extends Controller
         ]);
         DB::beginTransaction();
         try {
-            $kayu = Kayu::create(['kayu' => $validate['kayu']]);
+            $kayu = Kayu::create(['jenis_kayu' => $validate['jenis_kayu']]);
             DB::commit();
             return response()->json([
                 'message' => 'Kayu berhasil ditambahkan',

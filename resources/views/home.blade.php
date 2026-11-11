@@ -62,7 +62,7 @@
                     <div class="prod">
                         @if (data_get($product, 'image'))
                             <img src="{{ asset('storage/' . data_get($product, 'image')) }}"
-                                 alt="{{ data_get($product, 'name') }}"
+                                 alt="{{ data_get($barang, 'name') }}"
                                  style="width:100%;height:260px;object-fit:cover;border-radius:20px">
                         @else
                             <div class="prod-img" style="background:#E3D6C3">
