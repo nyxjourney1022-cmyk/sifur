@@ -30,6 +30,20 @@ class AddressController extends Controller
 
         $user = Auth::user();
 
+        // Cegah duplikat — cek alamat + nama penerima yang sama
+        $duplicate = $user->addresses()
+            ->where('nama_penerima', $data['nama_penerima'])
+            ->where('alamat', $data['alamat'])
+            ->where('kota', $data['kota'])
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Alamat dengan nama penerima dan alamat yang sama sudah tersimpan.',
+            ], 422);
+        }
+
         // Kalau set default, unset yang lain dulu
         if (!empty($data['is_default'])) {
             $user->addresses()->update(['is_default' => false]);

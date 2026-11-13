@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pelanggan;
 use App\Models\Reservasi;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
@@ -83,11 +84,21 @@ class CheckoutController extends Controller
         try {
             $total = $items->sum(fn($i) => $i->barang->harga * $i->jumlah);
 
+            // Cari atau buat data pelanggan berdasarkan user yang login
+            $pelanggan = Pelanggan::firstOrCreate(
+                ['no_tlp' => $user->phone ?? $request->no_tlp ?? ''],
+                [
+                    'nama'   => $user->name,
+                    'alamat' => $alamatStr,
+                    'no_tlp' => $request->no_tlp ?? '-',
+                ]
+            );
+
             // Buat reservasi
             $reservasi = Reservasi::create([
-                'pelanggan_id'      => $user->id, // pakai user_id sebagai pelanggan_id
+                'pelanggan_id'      => $pelanggan->id,
                 'tanggal_reservasi' => now(),
-                'status'            => 'pending',
+                'status'            => 'Menunggu',
             ]);
 
             // Kurangi stok + buat detail reservasi
