@@ -136,8 +136,7 @@ class CheckoutController extends Controller
             ->findOrFail($id);
 
         $total     = $reservasi->detailReservasis->sum(fn($d) => $d->barang->harga * $d->jumlah);
-        $furniture = \App\Models\Furniture::first();
-        $whatsapp  = $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx';
+        $whatsapp  = \App\Http\Controllers\HomeController::getWhatsapp();
 
         // Build WA draft
         $lines   = ["Halo, saya ingin melanjutkan pembayaran pesanan berikut:"];

@@ -8,6 +8,27 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
+    /**
+     * Ambil nomor WhatsApp toko.
+     * Prioritas: STORE_WHATSAPP di .env → no_tlp dari tabel furnitures → fallback default
+     */
+    public static function getWhatsapp(): string
+    {
+        // Dari .env
+        $fromEnv = env('STORE_WHATSAPP');
+        if (!empty($fromEnv)) {
+            return preg_replace('/[^0-9]/', '', $fromEnv);
+        }
+
+        // Dari DB
+        $furniture = \App\Models\Furniture::first();
+        if ($furniture?->no_tlp) {
+            return preg_replace('/[^0-9]/', '', $furniture->no_tlp);
+        }
+
+        return '62xxxxxxxxxx';
+    }
+
     public function index()
     {
         $furniture = Furniture::first();
@@ -47,7 +68,7 @@ class HomeController extends Controller
             'categories' => $categories,
             'stats'      => $stats,
             'about'      => 'Kami adalah toko furniture kayu pilihan yang telah berdiri sejak 2019. Setiap produk dibuat oleh pengrajin berpengalaman menggunakan kayu berkualitas tinggi untuk memastikan keindahan dan ketahanan jangka panjang.',
-            'whatsapp'   => $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx',
+            'whatsapp'   => HomeController::getWhatsapp(),
             'address'    => $furniture?->alamat_toko ?? '[ALAMAT SHOWROOM]',
             'phone'      => $furniture?->no_tlp ?? '[NOMOR TELEPON]',
             'store_name' => $furniture?->nama_toko ?? config('app.name'),
@@ -85,7 +106,7 @@ class HomeController extends Controller
         $byCategory       = $products->groupBy('kategori');
         $selectedKategori = $request->get('kategori');
         $furniture        = Furniture::first();
-        $whatsapp         = $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx';
+        $whatsapp         = HomeController::getWhatsapp();
 
         $html = view('partials.katalog-content', compact(
             'products', 'byCategory', 'selectedKategori', 'whatsapp'
@@ -147,7 +168,7 @@ class HomeController extends Controller
             'selectedKayu'     => $request->get('kayu'),
             'selectedSort'     => $request->get('sort', 'terbaru'),
             'store_name'       => $furniture?->nama_toko ?? config('app.name'),
-            'whatsapp'         => $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx',
+            'whatsapp'         => HomeController::getWhatsapp(),
             'address'          => $furniture?->alamat_toko ?? '[ALAMAT SHOWROOM]',
             'phone'            => $furniture?->no_tlp ?? '[NOMOR TELEPON]',
         ]);
