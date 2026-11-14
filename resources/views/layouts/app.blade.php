@@ -440,6 +440,8 @@ const CartDrawer = {
             if (data.success) {
                 updateCartBadge(data.total_items);
                 showToast(data.message);
+                // Reload drawer kalau sedang terbuka supaya data fresh
+                if (this.isOpen) this.load();
             } else {
                 showToast(data.message, true);
             }
@@ -450,6 +452,13 @@ const CartDrawer = {
     async changeQty(itemId, newQty, maxStok) {
         if (newQty < 1) { this.remove(itemId); return; }
         if (newQty > maxStok) { showToast('Melebihi stok yang tersedia.', true); return; }
+
+        // Disable tombol sementara proses
+        const btnMinus = document.querySelector(`[onclick="CartDrawer.changeQty(${itemId}, ${newQty - 1}, ${maxStok})"]`);
+        const btnPlus  = document.querySelector(`[onclick="CartDrawer.changeQty(${itemId}, ${newQty + 1}, ${maxStok})"]`);
+        if (btnMinus) btnMinus.disabled = true;
+        if (btnPlus)  btnPlus.disabled  = true;
+
         try {
             const res  = await fetch(`/cart/item/${itemId}`, {
                 method: 'PATCH',
@@ -458,14 +467,17 @@ const CartDrawer = {
             });
             const data = await res.json();
             if (data.success) {
-                document.getElementById(`qty-${itemId}`).textContent = newQty;
-                document.getElementById(`sub-${itemId}`).textContent = data.subtotal_fmt;
-                document.getElementById('cart-total').textContent    = data.total_fmt;
-                updateCartBadge(data.total_items);
+                // Reload seluruh drawer supaya onclick buttons update ke qty baru
+                await this.load();
             } else {
                 showToast(data.message, true);
+                if (btnMinus) btnMinus.disabled = false;
+                if (btnPlus)  btnPlus.disabled  = false;
             }
-        } catch(e) {}
+        } catch(e) {
+            if (btnMinus) btnMinus.disabled = false;
+            if (btnPlus)  btnPlus.disabled  = false;
+        }
     },
     async remove(itemId) {
         try {

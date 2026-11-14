@@ -28,15 +28,13 @@ class HomeController extends Controller
                 'image'    => $b->gambar_url,
             ]);
 
-        // Ambil kategori unik dari barang
-        $categories = Barang::select('kategori')
-            ->distinct()
-            ->whereNotNull('kategori')
-            ->pluck('kategori')
-            ->map(fn($k) => [
-                'name' => $k,
-                'room' => $this->getRoomLabel($k),
-            ]);
+        // 4 kategori ruangan tetap — selalu tampil dengan gambar yang sesuai
+        $categories = collect([
+            ['name' => 'Ruang Tamu',  'room' => 'Living Room'],
+            ['name' => 'Kamar Tidur', 'room' => 'Bedroom'],
+            ['name' => 'Ruang Makan', 'room' => 'Dining Room'],
+            ['name' => 'Ruang Kerja', 'room' => 'Home Office'],
+        ]);
 
         $stats = [
             ['value' => Barang::count() . '+',           'label' => 'Produk Tersedia'],
