@@ -7,72 +7,11 @@
     <title>@yield('title', $store_name ?? config('app.name')) – Furniture Kayu Berkualitas</title>
     <meta name="description" content="@yield('description', 'Furniture kayu berkualitas untuk rumah, kantor, dan hunian Anda.')">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cream:       '#F4EFE6',
-                        sand:        '#EBE3D4',
-                        wood:        '#8A5A3B',
-                        'wood-dark': '#6A4429',
-                        olive:       '#5B6B4A',
-                        ink:         '#2A2420',
-                        muted:       '#4A413A',
-                    },
-                    fontFamily: {
-                        serif: ['Fraunces', 'Georgia', 'serif'],
-                        sans:  ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .scroll-x::-webkit-scrollbar { height: 4px; }
-        .scroll-x::-webkit-scrollbar-track { background: transparent; }
-        .scroll-x::-webkit-scrollbar-thumb { background: #8A5A3B55; border-radius: 99px; }
-        .scroll-x::-webkit-scrollbar-thumb:hover { background: #8A5A3B; }
-        .scroll-y::-webkit-scrollbar { width: 4px; }
-        .scroll-y::-webkit-scrollbar-track { background: transparent; }
-        .scroll-y::-webkit-scrollbar-thumb { background: #8A5A3B55; border-radius: 99px; }
-
-        .snap-x-mandatory { scroll-snap-type: x mandatory; }
-        .snap-start { scroll-snap-align: start; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up   { animation: fadeUp .6s ease both; }
-        .fade-up-2 { animation: fadeUp .6s .15s ease both; }
-        .fade-up-3 { animation: fadeUp .6s .3s ease both; }
-
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to   { transform: translateX(0);    opacity: 1; }
-        }
-        .slide-in-right { animation: slideInRight .3s ease both; }
-
-        .nav-link { position: relative; }
-        .nav-link::after {
-            content: ''; position: absolute;
-            bottom: -2px; left: 0;
-            width: 0; height: 2px;
-            background: #8A5A3B;
-            transition: width .25s ease;
-        }
-        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
-
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        h1,h2,h3 { font-family: 'Fraunces', Georgia, serif; }
-
-        /* Toast */
-        #toast { transition: all .3s ease; }
     </style>
     @stack('styles')
 </head>
@@ -401,10 +340,10 @@ const CartDrawer = {
                         <p class="text-sm text-wood font-medium mt-0.5">${item.harga_fmt}</p>
                         <div class="flex items-center gap-2 mt-2">
                             <button onclick="CartDrawer.changeQty(${item.id}, ${item.jumlah - 1}, ${item.stok})"
-                                    class="w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">−</button>
+                                    class="btn-minus w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">−</button>
                             <span id="qty-${item.id}" class="text-sm font-semibold w-5 text-center">${item.jumlah}</span>
                             <button onclick="CartDrawer.changeQty(${item.id}, ${item.jumlah + 1}, ${item.stok})"
-                                    class="w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">+</button>
+                                    class="btn-plus w-6 h-6 rounded-full bg-sand hover:bg-wood/10 flex items-center justify-center text-ink text-sm font-bold transition-colors">+</button>
                         </div>
                     </div>
                     <div class="flex flex-col items-end justify-between shrink-0">
@@ -453,11 +392,10 @@ const CartDrawer = {
         if (newQty < 1) { this.remove(itemId); return; }
         if (newQty > maxStok) { showToast('Melebihi stok yang tersedia.', true); return; }
 
-        // Disable tombol sementara proses
-        const btnMinus = document.querySelector(`[onclick="CartDrawer.changeQty(${itemId}, ${newQty - 1}, ${maxStok})"]`);
-        const btnPlus  = document.querySelector(`[onclick="CartDrawer.changeQty(${itemId}, ${newQty + 1}, ${maxStok})"]`);
-        if (btnMinus) btnMinus.disabled = true;
-        if (btnPlus)  btnPlus.disabled  = true;
+        // Optimistic update — langsung update DOM tanpa loading
+        const qtyEl = document.getElementById(`qty-${itemId}`);
+        const oldQty = parseInt(qtyEl?.textContent ?? newQty);
+        if (qtyEl) qtyEl.textContent = newQty;
 
         try {
             const res  = await fetch(`/cart/item/${itemId}`, {
@@ -467,16 +405,23 @@ const CartDrawer = {
             });
             const data = await res.json();
             if (data.success) {
-                // Reload seluruh drawer supaya onclick buttons update ke qty baru
-                await this.load();
+                // Update subtotal dan total tanpa reload
+                document.getElementById(`sub-${itemId}`).textContent = data.subtotal_fmt;
+                document.getElementById('cart-total').textContent    = data.total_fmt;
+                updateCartBadge(data.total_items);
+
+                // Update onclick buttons ke qty baru
+                const btnMinus = document.querySelector(`#cart-item-${itemId} .btn-minus`);
+                const btnPlus  = document.querySelector(`#cart-item-${itemId} .btn-plus`);
+                if (btnMinus) btnMinus.setAttribute('onclick', `CartDrawer.changeQty(${itemId}, ${newQty - 1}, ${maxStok})`);
+                if (btnPlus)  btnPlus.setAttribute('onclick',  `CartDrawer.changeQty(${itemId}, ${newQty + 1}, ${maxStok})`);
             } else {
+                // Rollback kalau gagal
+                if (qtyEl) qtyEl.textContent = oldQty;
                 showToast(data.message, true);
-                if (btnMinus) btnMinus.disabled = false;
-                if (btnPlus)  btnPlus.disabled  = false;
             }
         } catch(e) {
-            if (btnMinus) btnMinus.disabled = false;
-            if (btnPlus)  btnPlus.disabled  = false;
+            if (qtyEl) qtyEl.textContent = oldQty;
         }
     },
     async remove(itemId) {

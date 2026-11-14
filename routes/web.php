@@ -43,8 +43,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cart',          [CartController::class, 'clear'])->name('cart.clear');
 
     // Checkout
-    Route::get('/checkout',         [CheckoutController::class, 'index'])->name('checkout');
-    Route::post('/checkout',        [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout',              [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout',             [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/payment/{id}', [CheckoutController::class, 'payment'])->name('checkout.payment');
     Route::get('/checkout/success/{id}', [CheckoutController::class, 'success'])->name('checkout.success');
 
     // Addresses (JSON)

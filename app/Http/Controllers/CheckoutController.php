@@ -119,12 +119,48 @@ class CheckoutController extends Controller
                 'success'      => true,
                 'message'      => 'Pesanan berhasil dibuat!',
                 'reservasi_id' => $reservasi->id,
-                'redirect'     => route('checkout.success', $reservasi->id),
+                'redirect'     => route('checkout.payment', $reservasi->id),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Gagal memproses pesanan: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function payment(int $id)
+    {
+        $user      = Auth::user();
+
+        // Cari reservasi — bisa lewat pelanggan yang terkait user ini
+        $reservasi = Reservasi::with(['detailReservasis.barang'])
+            ->findOrFail($id);
+
+        $total     = $reservasi->detailReservasis->sum(fn($d) => $d->barang->harga * $d->jumlah);
+        $furniture = \App\Models\Furniture::first();
+        $whatsapp  = $furniture?->no_tlp ? preg_replace('/[^0-9]/', '', $furniture->no_tlp) : '62xxxxxxxxxx';
+
+        // Build WA draft
+        $lines   = ["Halo, saya ingin melanjutkan pembayaran pesanan berikut:"];
+        $lines[] = "";
+        $lines[] = "📋 *Nomor Pesanan: #" . $reservasi->id . "*";
+        $lines[] = "📅 Tanggal: " . \Carbon\Carbon::parse($reservasi->tanggal_reservasi)->translatedFormat('d F Y');
+        $lines[] = "";
+        $lines[] = "🛒 *Detail Pesanan:*";
+        foreach ($reservasi->detailReservasis as $d) {
+            $sub     = $d->barang->harga * $d->jumlah;
+            $lines[] = "• " . $d->barang->nama_barang;
+            $lines[] = "  " . $d->jumlah . " pcs × Rp " . number_format($d->barang->harga, 0, ',', '.') . " = Rp " . number_format($sub, 0, ',', '.');
+        }
+        $lines[] = "";
+        $lines[] = "💰 *Total: Rp " . number_format($total, 0, ',', '.') . "*";
+        $lines[] = "";
+        $lines[] = "👤 Nama: " . $user->name;
+        $lines[] = "";
+        $lines[] = "Mohon konfirmasi ketersediaan dan metode pembayaran. Terima kasih!";
+
+        $waDraft = implode("\n", $lines);
+
+        return view('checkout-payment', compact('reservasi', 'total', 'whatsapp', 'waDraft'));
     }
 
     public function success(int $id)
