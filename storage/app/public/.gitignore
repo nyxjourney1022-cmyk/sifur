@@ -1,2 +1,5 @@
 *
 !.gitignore
+!hero.jpg
+!image/
+!image/**
