@@ -68,6 +68,28 @@
 </div>
 
 {{-- ═══════════════════════════════════════════════════════
+     AI REKOMENDASI (muncul saat kategori dipilih)
+═══════════════════════════════════════════════════════ --}}
+<div id="ai-rekomendasi" class="hidden max-w-7xl mx-auto px-6 lg:px-8 pt-10">
+    <div class="bg-gradient-to-r from-wood/10 to-olive/10 border border-wood/20 rounded-3xl p-6">
+        <div class="flex gap-4 items-start mb-4">
+            <div class="w-9 h-9 rounded-full bg-wood flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p id="ai-rekomendasi-label" class="text-xs font-semibold text-wood uppercase tracking-wider mb-1">
+                    Rekomendasi AI
+                </p>
+                <p id="ai-rekomendasi-text" class="text-sm text-ink leading-relaxed"></p>
+            </div>
+        </div>
+        <div id="ai-produk-highlight" class="hidden flex gap-3 overflow-x-auto scroll-x pb-1 mt-2"></div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
      KONTEN KATALOG
 ═══════════════════════════════════════════════════════ --}}
 <div id="katalog-content" class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
@@ -103,6 +125,7 @@
 // ── State ─────────────────────────────────────────────────────
 let currentKategori = @json($selectedKategori ?? '');
 let currentSort     = @json($selectedSort ?? 'terbaru');
+let aiAbortCtrl     = null;
 
 // ── Filter utama (kategori + sort) ────────────────────────────
 async function filterKatalog(kategori = '', sort = null) {
@@ -112,31 +135,26 @@ async function filterKatalog(kategori = '', sort = null) {
     // Update pill aktif
     document.querySelectorAll('.cat-pill').forEach(el => {
         const isActive = el.dataset.kategori === currentKategori;
-        el.className = el.className
-            .replace(/bg-ink|bg-wood|bg-sand|text-white|text-muted/g, '').trim();
-        if (isActive && !currentKategori) {
-            el.classList.add('bg-ink', 'text-white');
-        } else if (isActive && currentKategori) {
-            el.classList.add('bg-wood', 'text-white');
-        } else {
-            el.classList.add('bg-sand', 'text-muted');
-        }
+        el.className   = el.className.replace(/bg-ink|bg-wood|bg-sand|text-white|text-muted/g, '').trim();
+        if      (isActive && !currentKategori) el.classList.add('bg-ink', 'text-white');
+        else if (isActive &&  currentKategori) el.classList.add('bg-wood', 'text-white');
+        else                                   el.classList.add('bg-sand', 'text-muted');
     });
 
-    // Update sort select
     const sel = document.getElementById('sort-select');
     if (sel) sel.value = currentSort;
 
-    // Update URL tanpa reload
     const params = new URLSearchParams();
     if (currentKategori) params.set('kategori', currentKategori);
     if (currentSort && currentSort !== 'terbaru') params.set('sort', currentSort);
     history.pushState({}, '', '/katalog' + (params.toString() ? '?' + params.toString() : ''));
 
-    // Fetch produk via AJAX
     const content = document.getElementById('katalog-content');
-    content.style.opacity = '0.4';
+    content.style.opacity  = '0.4';
     content.style.transition = 'opacity .2s';
+
+    // Sembunyikan AI saat loading
+    document.getElementById('ai-rekomendasi')?.classList.add('hidden');
 
     try {
         const res  = await fetch('/katalog/data?' + params.toString(), {
@@ -150,8 +168,74 @@ async function filterKatalog(kategori = '', sort = null) {
         content.innerHTML = data.html;
         content.style.opacity = '1';
         initScrollButtons();
+
+        // Tampilkan AI rekomendasi kalau kategori dipilih
+        if (currentKategori) showAiRekomendasi(currentKategori);
+
     } catch(e) {
         content.style.opacity = '1';
+    }
+}
+
+// ── AI Rekomendasi ────────────────────────────────────────────
+async function showAiRekomendasi(kategori) {
+    const box      = document.getElementById('ai-rekomendasi');
+    const textEl   = document.getElementById('ai-rekomendasi-text');
+    const labelEl  = document.getElementById('ai-rekomendasi-label');
+    const highlight= document.getElementById('ai-produk-highlight');
+    if (!box || !textEl) return;
+
+    if (aiAbortCtrl) aiAbortCtrl.abort();
+    aiAbortCtrl = new AbortController();
+
+    box.classList.remove('hidden');
+    if (labelEl) labelEl.textContent = `Rekomendasi AI untuk ${kategori}`;
+    highlight?.classList.add('hidden');
+    textEl.innerHTML = `<span class="inline-flex gap-1 items-center text-muted">
+        <span class="w-1.5 h-1.5 bg-wood rounded-full animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-1.5 h-1.5 bg-wood rounded-full animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-1.5 h-1.5 bg-wood rounded-full animate-bounce" style="animation-delay:300ms"></span>
+    </span>`;
+
+    try {
+        const res  = await fetch('/chat/rekomendasi', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body:    JSON.stringify({ kategori }),
+            signal:  aiAbortCtrl.signal,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // Kalau kategori kosong, ubah label
+            if (data.kosong) {
+                if (labelEl) labelEl.textContent = `✨ Produk ${kategori} belum ada — Rekomendasi Alternatif AI`;
+            }
+
+            textEl.textContent = data.reply;
+
+            if (data.produk?.length && highlight) {
+                highlight.innerHTML = data.produk.map(p => `
+                    <div class="shrink-0 bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm border border-sand/60 min-w-[200px] cursor-pointer hover:border-wood/40 transition-colors"
+                         onclick="CartDrawer.add(${p.id})">
+                        <div class="w-12 h-12 rounded-xl overflow-hidden bg-sand shrink-0">
+                            ${p.image
+                                ? `<img src="${p.image}" class="w-full h-full object-cover">`
+                                : `<div class="w-full h-full flex items-end justify-center pb-1"><div class="w-6 h-6 bg-wood/50 rounded-t-lg"></div></div>`}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-ink truncate">${p.name}</p>
+                            <p class="text-xs text-wood font-medium">${p.price}</p>
+                            ${p.kayu ? `<p class="text-[10px] text-muted">Kayu ${p.kayu}</p>` : ''}
+                        </div>
+                    </div>`).join('');
+                highlight.classList.remove('hidden');
+            }
+        } else {
+            box.classList.add('hidden');
+        }
+    } catch(e) {
+        if (e.name !== 'AbortError') box.classList.add('hidden');
     }
 }
 
@@ -167,9 +251,9 @@ function initScrollButtons() {
         function update() {
             const atStart = row.scrollLeft <= 10;
             const atEnd   = row.scrollLeft + row.clientWidth >= row.scrollWidth - 10;
-            btnLeft.classList.toggle('opacity-0',            atStart);
-            btnLeft.classList.toggle('pointer-events-none',  atStart);
-            btnRight.classList.toggle('opacity-0',           atEnd);
+            btnLeft.classList.toggle('opacity-0',           atStart);
+            btnLeft.classList.toggle('pointer-events-none', atStart);
+            btnRight.classList.toggle('opacity-0',          atEnd);
             btnRight.classList.toggle('pointer-events-none', atEnd);
         }
         btnLeft.onclick  = () => row.scrollBy({ left: -STEP, behavior: 'smooth' });
@@ -179,6 +263,9 @@ function initScrollButtons() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', initScrollButtons);
+document.addEventListener('DOMContentLoaded', () => {
+    initScrollButtons();
+    if (currentKategori) showAiRekomendasi(currentKategori);
+});
 </script>
 @endpush

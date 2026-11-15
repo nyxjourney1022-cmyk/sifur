@@ -1,14 +1,17 @@
 @if($products->isEmpty())
-<div class="text-center py-24">
-    <div class="w-20 h-20 bg-sand rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg class="w-10 h-10 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+{{-- Kosong — AI rekomendasi muncul di atas via JS --}}
+<div class="text-center py-16">
+    <div class="w-16 h-16 bg-sand rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
         </svg>
     </div>
-    <h3 class="font-serif text-2xl font-medium text-ink mb-2">Produk tidak ditemukan</h3>
-    <p class="text-muted mb-6">Coba ubah filter atau lihat semua kategori.</p>
+    <h3 class="font-serif text-xl font-medium text-ink mb-1">
+        Produk <strong>{{ $selectedKategori }}</strong> belum tersedia
+    </h3>
+    <p class="text-sm text-muted mb-4">AI kami sedang mencarikan rekomendasi alternatif di atas ☝️</p>
     <button onclick="filterKatalog('')"
-            class="inline-flex items-center gap-2 bg-wood text-white font-semibold px-6 py-3 rounded-full hover:bg-wood-dark transition-colors">
+            class="inline-flex items-center gap-2 border border-wood text-wood font-medium text-sm px-5 py-2 rounded-full hover:bg-wood hover:text-white transition-colors">
         Lihat Semua Produk
     </button>
 </div>
@@ -26,7 +29,7 @@
 </div>
 
 @else
-{{-- Horizontal scroll per kategori --}}
+{{-- Semua kategori — horizontal scroll per kategori --}}
 @foreach($byCategory as $kategori => $items)
 <div class="hs-section mb-16">
     <div class="flex items-center justify-between mb-6">

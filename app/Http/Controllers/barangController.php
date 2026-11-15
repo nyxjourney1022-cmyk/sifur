@@ -73,40 +73,46 @@ class barangController extends Controller
         }
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
+            'kategori'    => 'required|string|max:255',
             'stok_barang' => 'required|integer|min:1',
-            'harga' => 'required|numeric|min:1',
-            'jenis_kayu' => 'required|string|max:100',
-            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webm|max:2048'
+            'harga'       => 'required|numeric|min:1',
+            'jenis_kayu'  => 'required|string|max:100',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
         DB::beginTransaction();
         try {
-            $pathGambar = null;
-            if($request -> hasfile('gambar')){
-                $pathGambar= $request->file('gambar')->store('barang_image','public');
+            // Hanya update gambar kalau ada file baru
+            $pathGambar = $barang->gambar;
+            if ($request->hasFile('gambar')) {
+                // Hapus gambar lama dari storage
+                if ($barang->gambar) {
+                    Storage::disk('public')->delete($barang->gambar);
+                }
+                $pathGambar = $request->file('gambar')->store('barang_image', 'public');
             }
+
             $kayu = Kayu::firstOrCreate([
                 'jenis_kayu' => $validate['jenis_kayu']
             ]);
             $barang->update([
                 'nama_barang' => $validate['nama_barang'],
-                'kategori' => $validate['kategori'],
+                'kategori'    => $validate['kategori'],
                 'stok_barang' => $validate['stok_barang'],
-                'harga' => $validate['harga'],
-                'kayu_id'=> $kayu->id,
-                'gambar'=>$pathGambar
+                'harga'       => $validate['harga'],
+                'kayu_id'     => $kayu->id,
+                'gambar'      => $pathGambar,
             ]);
             DB::commit();
             return response()->json([
-                'message' => 'barang berhasil diupdate',
-                'success' => true,
-                'data_reservasi' => $barang
+                'message'      => 'barang berhasil diupdate',
+                'success'      => true,
+                'data_barang'  => $barang->fresh(),
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'reservasi tidak berhasil diupdate',
-                'error' => $e->getMessage()
+                'message' => 'Barang gagal diupdate',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }

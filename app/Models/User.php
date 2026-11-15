@@ -29,6 +29,11 @@ class User extends Authenticatable
         return $this->hasOne(Cart::class);
     }
 
+    public function pelanggan()
+    {
+        return $this->hasOne(Pelanggan::class);
+    }
+
     public function getOrCreateCart(): Cart
     {
         return $this->cart ?? $this->cart()->create();

@@ -10,10 +10,15 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    private function storeName(): string
+    {
+        return \App\Models\Furniture::value('nama_toko') ?? config('app.name');
+    }
+
     // ── Register ────────────────────────────────────────────
     public function showRegister()
     {
-        return view('auth.register');
+        return view('auth.register', ['store_name' => $this->storeName()]);
     }
 
     public function register(Request $request)
@@ -39,7 +44,7 @@ class AuthController extends Controller
     // ── Login ────────────────────────────────────────────────
     public function showLogin()
     {
-        return view('auth.login');
+        return view('auth.login', ['store_name' => $this->storeName()]);
     }
 
     public function login(Request $request)

@@ -12,8 +12,8 @@
         </a>
         <h1 class="font-serif text-3xl font-medium text-ink">Pesanan #{{ $order->id }}</h1>
         @php
-            $statusColor = match($order->status) {
-                'pending'    => 'bg-amber-100 text-amber-700',
+            $statusColor = match(strtolower($order->status)) {
+                'menunggu'   => 'bg-amber-100 text-amber-700',
                 'diproses'   => 'bg-blue-100 text-blue-700',
                 'selesai'    => 'bg-green-100 text-green-700',
                 'dibatalkan' => 'bg-red-100 text-red-700',

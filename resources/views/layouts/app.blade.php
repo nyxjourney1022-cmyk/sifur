@@ -331,7 +331,7 @@ const CartDrawer = {
                 <div class="flex gap-3 py-4 border-b border-sand" id="cart-item-${item.id}">
                     <div class="w-16 h-16 rounded-xl overflow-hidden bg-sand shrink-0">
                         ${item.image
-                            ? `<img src="${item.image}" class="w-full h-full object-cover">`
+                            ? `<img src="${item.image}" loading="lazy" decoding="async" class="w-full h-full object-cover">`
                             : `<div class="w-full h-full flex items-end justify-center pb-1"><div class="w-8 h-8 bg-wood/60 rounded-t-lg"></div></div>`}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -641,10 +641,15 @@ const CSWidget = {
             const reply = data.success ? data.reply : (data.message ?? 'Maaf, terjadi kesalahan.');
             this.addBubble('assistant', reply);
 
-            // Simpan ke history (maks 10 pasang)
+            // Kalau ada produk rekomendasi, tampilkan card-nya
+            if (data.success && data.produk?.length) {
+                this.addProdukCards(data.produk);
+            }
+
+            // Simpan ke history — maksimal 6 pesan terakhir (3 pasang)
             this.history.push({ role: 'user', content: msg });
             this.history.push({ role: 'assistant', content: reply });
-            if (this.history.length > 20) this.history = this.history.slice(-20);
+            if (this.history.length > 6) this.history = this.history.slice(-6);
 
         } catch(e) {
             this.removeTyping();
@@ -659,6 +664,28 @@ const CSWidget = {
         const input = document.getElementById('cs-input');
         if (input) input.value = text;
         this.send();
+    },
+
+    addProdukCards(produk) {
+        const msgs = document.getElementById('cs-messages');
+        const wrap = document.createElement('div');
+        wrap.className = 'flex gap-2 overflow-x-auto scroll-x pb-1 mt-1 ml-9';
+        wrap.innerHTML = produk.map(p => `
+            <div class="shrink-0 bg-white border border-sand rounded-xl p-2.5 flex items-center gap-2 min-w-[160px] max-w-[180px] cursor-pointer hover:border-wood/50 transition-colors"
+                 onclick="CartDrawer.add(${p.id}); showToast('${p.name.replace(/'/g, "\\'")} ditambahkan!')">
+                <div class="w-10 h-10 rounded-lg overflow-hidden bg-sand shrink-0">
+                    ${p.image
+                        ? `<img src="${p.image}" loading="lazy" decoding="async" class="w-full h-full object-cover">`
+                        : `<div class="w-full h-full flex items-end justify-center pb-0.5"><div class="w-5 h-5 bg-wood/50 rounded-t-md"></div></div>`}
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold text-ink truncate leading-tight">${p.name}</p>
+                    <p class="text-[11px] text-wood font-medium mt-0.5">${p.price}</p>
+                    ${p.kayu ? `<p class="text-[10px] text-muted truncate">${p.kayu}</p>` : ''}
+                </div>
+            </div>`).join('');
+        msgs.appendChild(wrap);
+        this.scrollBottom();
     },
 };
 

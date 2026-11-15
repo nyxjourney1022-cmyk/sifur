@@ -34,8 +34,8 @@
     <div class="space-y-4">
         @foreach($orders as $order)
         @php
-            $statusColor = match($order->status) {
-                'pending'   => 'bg-amber-100 text-amber-700',
+            $statusColor = match(strtolower($order->status)) {
+                'menunggu'  => 'bg-amber-100 text-amber-700',
                 'diproses'  => 'bg-blue-100 text-blue-700',
                 'selesai'   => 'bg-green-100 text-green-700',
                 'dibatalkan'=> 'bg-red-100 text-red-700',
@@ -92,7 +92,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
                     </svg>
                 </a>
-                @if($order->status === 'pending')
+                @if(strtolower($order->status) === 'menunggu')
                 <a href="https://wa.me/{{ $whatsapp ?? '62xxxxxxxxxx' }}?text={{ urlencode('Halo, saya ingin konfirmasi pesanan #' . $order->id) }}"
                    target="_blank"
                    class="text-sm font-medium text-muted hover:text-ink transition-colors flex items-center gap-1.5">

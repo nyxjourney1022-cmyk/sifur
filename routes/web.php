@@ -63,12 +63,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/pesanan/{id}',  [OrderController::class, 'show'])->name('pesanan.show');
 });
 
-// ── Chat CS (public, no auth required) ───────────────────────
-Route::post('/chat',                    [ChatController::class, 'send'])->name('chat.send');
-Route::post('/chat/rekomendasi',        [ChatController::class, 'rekomendasiKategori'])->name('chat.rekomendasi');
+// ── Chat CS — rate limited ────────────────────────────────────
+Route::middleware('throttle:30,1')->group(function () {
+    Route::post('/chat',             [ChatController::class, 'send'])->name('chat.send');
+    Route::post('/chat/rekomendasi', [ChatController::class, 'rekomendasiKategori'])->name('chat.rekomendasi');
+});
 
-// ── API: Backend CRUD (tidak perlu auth untuk demo, bisa ditambah middleware) ──
-Route::prefix('api')->group(function () {
+// ── API: Backend CRUD — wajib auth ───────────────────────────
+Route::prefix('api')->middleware('auth')->group(function () {
     Route::get('/reservasi',          [reservasiController::class, 'index']);
     Route::post('/reservasi',         [reservasiController::class, 'store']);
     Route::put('/reservasi/{id}',     [reservasiController::class, 'update']);

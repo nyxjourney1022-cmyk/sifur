@@ -14,10 +14,10 @@ class HomeController extends Controller
      */
     public static function getWhatsapp(): string
     {
-        // Dari .env
-        $fromEnv = env('STORE_WHATSAPP');
-        if (!empty($fromEnv)) {
-            return preg_replace('/[^0-9]/', '', $fromEnv);
+        // Dari config (env STORE_WHATSAPP) — bekerja setelah config:cache
+        $fromConfig = config('services.store_whatsapp', '');
+        if (!empty($fromConfig)) {
+            return preg_replace('/[^0-9]/', '', $fromConfig);
         }
 
         // Dari DB
