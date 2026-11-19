@@ -40,6 +40,18 @@
 
         {{-- Hover actions --}}
         <div class="absolute bottom-3 right-3 flex gap-2">
+            {{-- Wishlist --}}
+            @auth
+            <button onclick="toggleWishlist({{ data_get($product, 'id') }}, this)"
+                    data-id="{{ data_get($product, 'id') }}"
+                    class="wish-btn w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:bg-red-50"
+                    title="Simpan ke wishlist">
+                <svg class="w-4 h-4 text-muted wish-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+                </svg>
+            </button>
+            @endauth
+
             {{-- Add to Cart --}}
             @if(data_get($product, 'stok') > 0)
             <button onclick="CartDrawer.add({{ data_get($product, 'id') }})"
@@ -91,5 +103,27 @@
             <span class="text-xs text-red-500 font-medium">Habis</span>
             @endif
         </div>
+        {{-- Rating ringkas --}}
+        <div id="card-rating-{{ data_get($product, 'id') }}" class="flex items-center gap-1 mt-2 text-xs text-muted"></div>
     </div>
 </div>
+
+<script>
+(function(){
+    const bid = {{ data_get($product, 'id') }};
+    fetch(`/reviews/${bid}`, { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } })
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById(`card-rating-${bid}`);
+            if (!el) return;
+            if (data.total > 0) {
+                const stars = Array.from({length:5},(_,i) =>
+                    `<span class="${i < Math.round(data.avg_rating) ? 'text-amber-400':'text-gray-300'}">★</span>`
+                ).join('');
+                el.innerHTML = `${stars} <span class="ml-1">${data.avg_rating} (${data.total})</span>`;
+            } else {
+                el.innerHTML = `<span class="text-gray-300">★★★★★</span> <span class="ml-1">Belum ada ulasan</span>`;
+            }
+        }).catch(()=>{});
+})();
+</script>

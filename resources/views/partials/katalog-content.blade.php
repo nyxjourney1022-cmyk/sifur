@@ -1,15 +1,22 @@
 @if($products->isEmpty())
-{{-- Kosong — AI rekomendasi muncul di atas via JS --}}
+{{-- Kosong --}}
 <div class="text-center py-16">
     <div class="w-16 h-16 bg-sand rounded-full flex items-center justify-center mx-auto mb-4">
         <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
         </svg>
     </div>
+    @if(!empty($selectedSearch))
+    <h3 class="font-serif text-xl font-medium text-ink mb-1">
+        Tidak ada hasil untuk "<strong>{{ $selectedSearch }}</strong>"
+    </h3>
+    <p class="text-sm text-muted mb-4">Coba kata kunci lain atau lihat semua produk.</p>
+    @else
     <h3 class="font-serif text-xl font-medium text-ink mb-1">
         Produk <strong>{{ $selectedKategori }}</strong> belum tersedia
     </h3>
     <p class="text-sm text-muted mb-4">AI kami sedang mencarikan rekomendasi alternatif di atas ☝️</p>
+    @endif
     <button onclick="filterKatalog('')"
             class="inline-flex items-center gap-2 border border-wood text-wood font-medium text-sm px-5 py-2 rounded-full hover:bg-wood hover:text-white transition-colors">
         Lihat Semua Produk

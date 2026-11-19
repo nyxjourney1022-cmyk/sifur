@@ -21,7 +21,7 @@ class HomeController extends Controller
         }
 
         // Dari DB
-        $furniture = \App\Models\Furniture::first();
+        $furniture = Furniture::first();
         if ($furniture?->no_tlp) {
             return preg_replace('/[^0-9]/', '', $furniture->no_tlp);
         }
@@ -85,8 +85,16 @@ class HomeController extends Controller
         if ($request->filled('kayu')) {
             $query->whereHas('kayu', fn($q) => $q->where('jenis_kayu', $request->kayu));
         }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_barang', 'like', "%{$search}%")
+                  ->orWhere('kategori', 'like', "%{$search}%")
+                  ->orWhereHas('kayu', fn($k) => $k->where('jenis_kayu', 'like', "%{$search}%"));
+            });
+        }
 
-        match ($request->get('sort', 'terbaru')) {
+        match ($request->input('sort', 'terbaru')) {
             'harga_asc'  => $query->orderBy('harga', 'asc'),
             'harga_desc' => $query->orderBy('harga', 'desc'),
             'nama'       => $query->orderBy('nama_barang', 'asc'),
@@ -104,12 +112,13 @@ class HomeController extends Controller
         ]);
 
         $byCategory       = $products->groupBy('kategori');
-        $selectedKategori = $request->get('kategori');
+        $selectedKategori = $request->input('kategori');
+        $selectedSearch   = $request->input('search');
         $furniture        = Furniture::first();
         $whatsapp         = HomeController::getWhatsapp();
 
         $html = view('partials.katalog-content', compact(
-            'products', 'byCategory', 'selectedKategori', 'whatsapp'
+            'products', 'byCategory', 'selectedKategori', 'selectedSearch', 'whatsapp'
         ))->render();
 
         return response()->json([
@@ -133,7 +142,7 @@ class HomeController extends Controller
         }
 
         // Sort
-        match ($request->get('sort', 'terbaru')) {
+        match ($request->input('sort', 'terbaru')) {
             'harga_asc'  => $query->orderBy('harga', 'asc'),
             'harga_desc' => $query->orderBy('harga', 'desc'),
             'nama'       => $query->orderBy('nama_barang', 'asc'),
@@ -164,9 +173,9 @@ class HomeController extends Controller
             'products'         => $products,
             'byCategory'       => $byCategory,
             'categories'       => $categories,
-            'selectedKategori' => $request->get('kategori'),
-            'selectedKayu'     => $request->get('kayu'),
-            'selectedSort'     => $request->get('sort', 'terbaru'),
+            'selectedKategori' => $request->input('kategori'),
+            'selectedKayu'     => $request->input('kayu'),
+            'selectedSort'     => $request->input('sort', 'terbaru'),
             'store_name'       => $furniture?->nama_toko ?? config('app.name'),
             'whatsapp'         => HomeController::getWhatsapp(),
             'address'          => $furniture?->alamat_toko ?? '[ALAMAT SHOWROOM]',

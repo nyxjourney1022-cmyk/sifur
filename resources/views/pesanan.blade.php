@@ -64,6 +64,25 @@
                 </div>
             </div>
 
+            {{-- Mini Progress Tracker --}}
+            @if(strtolower($order->status) !== 'dibatalkan')
+            @php
+                $steps       = ['Menunggu', 'Diproses', 'Selesai'];
+                $currentStep = array_search($order->status, $steps);
+            @endphp
+            <div class="flex items-center gap-1.5 mb-4">
+                @foreach($steps as $i => $step)
+                <div class="flex items-center gap-1.5 {{ $i < count($steps) - 1 ? 'flex-1' : '' }}">
+                    <div class="w-2.5 h-2.5 rounded-full shrink-0 {{ $i <= $currentStep ? 'bg-wood' : 'bg-sand' }}"></div>
+                    @if($i < count($steps) - 1)
+                    <div class="flex-1 h-0.5 {{ $i < $currentStep ? 'bg-wood' : 'bg-sand' }}"></div>
+                    @endif
+                </div>
+                @endforeach
+                <span class="text-xs text-muted ml-2 shrink-0">{{ $order->status }}</span>
+            </div>
+            @endif
+
             {{-- Preview items --}}
             <div class="flex gap-2 mb-4">
                 @foreach($order->detailReservasis->take(4) as $detail)

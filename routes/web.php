@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\barangController;
 use App\Http\Controllers\kayuController;
 use App\Http\Controllers\reservasiController;
@@ -57,7 +59,18 @@ Route::middleware('auth')->group(function () {
     Route::patch('/addresses/{id}/default', [AddressController::class, 'setDefault'])->name('addresses.default');
 
     // Profile
-    Route::get('/profil', [ProfileController::class, 'index'])->name('profil');
+    Route::get('/profil',  [ProfileController::class, 'index'])->name('profil');
+    Route::post('/profil', [ProfileController::class, 'update'])->name('profil.update');
+
+    // Wishlist
+    Route::get('/wishlist',               [WishlistController::class, 'index'])->name('wishlist');
+    Route::post('/wishlist/{barangId}',   [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/check',        [WishlistController::class, 'check'])->name('wishlist.check');
+
+    // Reviews
+    Route::get('/reviews/{barangId}',    [ReviewController::class, 'index']);
+    Route::post('/reviews/{barangId}',   [ReviewController::class, 'store'])->middleware('auth');
+    Route::delete('/reviews/{barangId}', [ReviewController::class, 'destroy'])->middleware('auth');
 
     // Pesanan
     Route::get('/pesanan',       [OrderController::class, 'index'])->name('pesanan');
