@@ -89,6 +89,13 @@
                         </svg>
                         Pesanan Saya
                     </a>
+                    <a href="{{ route('wishlist') }}"
+                       class="flex items-center gap-2.5 px-4 py-3 text-sm text-ink hover:bg-sand transition-colors">
+                        <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+                        </svg>
+                        Wishlist Saya
+                    </a>
                     <div class="border-t border-sand">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -698,5 +705,59 @@ setTimeout(() => {
 </script>
 
 @stack('scripts')
+
+<script>
+// ── Wishlist Toggle (global) ──────────────────────────────────
+async function toggleWishlist(barangId, btn) {
+    @auth
+    try {
+        const res  = await fetch(`/wishlist/${barangId}`, {
+            method:  'POST',
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        });
+        const data = await res.json();
+        if (data.success) {
+            const icon = btn?.querySelector('.wish-icon');
+            if (icon) {
+                icon.setAttribute('fill', data.in_wishlist ? 'currentColor' : 'none');
+                icon.classList.toggle('text-red-500', data.in_wishlist);
+                icon.classList.toggle('text-muted', !data.in_wishlist);
+            }
+            showToast(data.message);
+        }
+    } catch(e) {}
+    @else
+    window.location.href = '/login';
+    @endauth
+}
+
+// Load status wishlist semua product card di halaman
+document.addEventListener('DOMContentLoaded', () => {
+    const btns = document.querySelectorAll('.wish-btn[data-id]');
+    if (!btns.length) return;
+    const ids = [...btns].map(b => b.dataset.id);
+
+    @auth
+    fetch('/wishlist/check', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        body:    JSON.stringify({ ids }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.wishlisted) return;
+        data.wishlisted.forEach(id => {
+            const btn  = document.querySelector(`.wish-btn[data-id="${id}"]`);
+            const icon = btn?.querySelector('.wish-icon');
+            if (icon) {
+                icon.setAttribute('fill', 'currentColor');
+                icon.classList.add('text-red-500');
+                icon.classList.remove('text-muted');
+            }
+        });
+    }).catch(() => {});
+    @endauth
+});
+</script>
 </body>
 </html>

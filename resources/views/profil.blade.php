@@ -2,6 +2,8 @@
 
 @section('title', 'Profil Saya')
 
+@php use Illuminate\Support\Facades\Storage; @endphp
+
 @section('content')
 <div class="max-w-4xl mx-auto px-6 lg:px-8 py-12">
 
@@ -22,7 +24,8 @@
         <div class="md:col-span-1">
             <div class="bg-white rounded-3xl p-6 text-center">
                 @if($user->avatar)
-                    <img src="{{ $user->avatar }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4" referrerpolicy="no-referrer">
+                    <img src="{{ str_starts_with($user->avatar, 'http') ? $user->avatar : Storage::url($user->avatar) }}"
+                         class="w-20 h-20 rounded-full object-cover mx-auto mb-4" referrerpolicy="no-referrer">
                 @else
                     <div class="w-20 h-20 rounded-full bg-wood text-white text-3xl font-bold flex items-center justify-center mx-auto mb-4">
                         {{ strtoupper(substr($user->name, 0, 1)) }}
@@ -30,12 +33,21 @@
                 @endif
                 <h2 class="font-semibold text-ink text-lg">{{ $user->name }}</h2>
                 <p class="text-sm text-muted mt-1">{{ $user->email }}</p>
+                @if($user->phone)
+                <p class="text-sm text-muted mt-0.5">{{ $user->phone }}</p>
+                @endif
                 @if($user->google_id)
                 <span class="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 font-medium px-3 py-1 rounded-full mt-2">
                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                     Akun Google
                 </span>
                 @endif
+
+                {{-- Tombol Edit Profil --}}
+                <button onclick="document.getElementById('edit-profil-modal').classList.remove('hidden')"
+                        class="mt-4 w-full border-2 border-wood text-wood text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-wood hover:text-white transition-colors">
+                    Edit Profil
+                </button>
 
                 <div class="border-t border-sand mt-5 pt-5 space-y-2">
                     <a href="{{ route('katalog') }}"
@@ -183,10 +195,122 @@
     </div>
 </div>
 
+{{-- ══ Modal Edit Profil ══════════════════════════════════════ --}}
+<div id="edit-profil-modal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="font-serif text-xl font-medium text-ink">Edit Profil</h3>
+            <button onclick="document.getElementById('edit-profil-modal').classList.add('hidden')"
+                    class="p-2 hover:bg-sand rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        @if(session('success'))
+        <div class="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mb-4">
+            {{ session('success') }}
+        </div>
+        @endif
+
+        @if($errors->any())
+        <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <form action="{{ route('profil.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+
+            {{-- Foto Profil --}}
+            <div class="flex items-center gap-4">
+                <div id="avatar-preview" class="w-16 h-16 rounded-full overflow-hidden bg-wood flex items-center justify-center shrink-0">
+                    @if($user->avatar)
+                        <img src="{{ str_starts_with($user->avatar, 'http') ? $user->avatar : Storage::url($user->avatar) }}"
+                             class="w-full h-full object-cover" referrerpolicy="no-referrer" id="avatar-img">
+                    @else
+                        <span class="text-white text-2xl font-bold" id="avatar-initial">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                    @endif
+                </div>
+                <div>
+                    <label class="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-wood hover:text-wood-dark transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Ganti Foto
+                        <input type="file" name="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
+                    </label>
+                    <p class="text-xs text-muted mt-0.5">JPG, PNG, WEBP. Maks 2MB</p>
+                </div>
+            </div>
+
+            {{-- Nama --}}
+            <div>
+                <label class="block text-sm font-medium text-ink mb-1.5">Nama</label>
+                <input type="text" name="name" value="{{ old('name', $user->name) }}"
+                       class="w-full bg-sand border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-wood focus:outline-none">
+            </div>
+
+            {{-- No HP --}}
+            <div>
+                <label class="block text-sm font-medium text-ink mb-1.5">No. Handphone</label>
+                <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="08xxxxxxxxxx"
+                       class="w-full bg-sand border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-wood focus:outline-none">
+            </div>
+
+            @if(!$user->google_id)
+            {{-- Ganti Password --}}
+            <div class="border-t border-sand pt-4">
+                <p class="text-sm font-medium text-ink mb-3">Ganti Password <span class="text-muted font-normal">(opsional)</span></p>
+                <div class="space-y-3">
+                    <input type="password" name="password" placeholder="Password baru (min. 8 karakter)"
+                           class="w-full bg-sand border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-wood focus:outline-none">
+                    <input type="password" name="password_confirmation" placeholder="Konfirmasi password baru"
+                           class="w-full bg-sand border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-wood focus:outline-none">
+                </div>
+            </div>
+            @endif
+
+            <div class="flex gap-3 pt-2">
+                <button type="button"
+                        onclick="document.getElementById('edit-profil-modal').classList.add('hidden')"
+                        class="flex-1 border-2 border-sand text-muted font-medium py-3 rounded-full hover:border-ink/20 transition-colors">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-wood text-white font-semibold py-3 rounded-full hover:bg-wood-dark transition-colors">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
+// Auto buka modal edit profil kalau ada error validasi atau pesan sukses
+@if($errors->any() || session('success'))
+document.getElementById('edit-profil-modal').classList.remove('hidden');
+@endif
+
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('avatar-preview');
+            preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 function showAddressModal() { document.getElementById('address-modal').classList.remove('hidden'); }
 function hideAddressModal() {
     document.getElementById('address-modal').classList.add('hidden');

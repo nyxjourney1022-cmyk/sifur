@@ -35,6 +35,24 @@
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
         <div class="flex flex-wrap items-center gap-3 py-4">
 
+            {{-- Search bar --}}
+            <div class="relative w-full sm:w-auto sm:min-w-[220px]">
+                <input type="text" id="search-input" placeholder="Cari produk..."
+                       value="{{ request('search') }}"
+                       oninput="debounceSearch(this.value)"
+                       class="w-full bg-sand border-0 rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-wood focus:outline-none">
+                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                </svg>
+                <button id="search-clear" onclick="clearSearch()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 hidden text-muted hover:text-ink">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
             {{-- Kategori pills --}}
             <div class="flex items-center gap-2 overflow-x-auto scroll-x pb-1 flex-1 min-w-0">
                 <button onclick="filterKatalog('')"
@@ -125,7 +143,26 @@
 // ── State ─────────────────────────────────────────────────────
 let currentKategori = @json($selectedKategori ?? '');
 let currentSort     = @json($selectedSort ?? 'terbaru');
+let currentSearch   = @json(request('search') ?? '');
+let searchTimeout   = null;
 let aiAbortCtrl     = null;
+
+// ── Debounce search ───────────────────────────────────────────
+function debounceSearch(val) {
+    currentSearch = val.trim();
+    const clearBtn = document.getElementById('search-clear');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !currentSearch);
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => fetchKatalog(), 400);
+}
+
+function clearSearch() {
+    currentSearch = '';
+    const input = document.getElementById('search-input');
+    if (input) input.value = '';
+    document.getElementById('search-clear')?.classList.add('hidden');
+    fetchKatalog();
+}
 
 // ── Filter utama (kategori + sort) ────────────────────────────
 async function filterKatalog(kategori = '', sort = null) {
@@ -144,16 +181,21 @@ async function filterKatalog(kategori = '', sort = null) {
     const sel = document.getElementById('sort-select');
     if (sel) sel.value = currentSort;
 
+    fetchKatalog();
+}
+
+// ── Fetch katalog data ────────────────────────────────────────
+async function fetchKatalog() {
     const params = new URLSearchParams();
     if (currentKategori) params.set('kategori', currentKategori);
     if (currentSort && currentSort !== 'terbaru') params.set('sort', currentSort);
+    if (currentSearch) params.set('search', currentSearch);
     history.pushState({}, '', '/katalog' + (params.toString() ? '?' + params.toString() : ''));
 
     const content = document.getElementById('katalog-content');
     content.style.opacity  = '0.4';
     content.style.transition = 'opacity .2s';
 
-    // Sembunyikan AI saat loading
     document.getElementById('ai-rekomendasi')?.classList.add('hidden');
 
     try {
@@ -163,14 +205,18 @@ async function filterKatalog(kategori = '', sort = null) {
         const data = await res.json();
 
         const countEl = document.getElementById('product-count');
-        if (countEl) countEl.textContent = data.count + ' produk tersedia untuk Anda';
+        if (countEl) {
+            const label = currentSearch
+                ? `${data.count} hasil untuk "<strong>${currentSearch}</strong>"`
+                : `${data.count} produk tersedia untuk Anda`;
+            countEl.innerHTML = label;
+        }
 
         content.innerHTML = data.html;
         content.style.opacity = '1';
         initScrollButtons();
 
-        // Tampilkan AI rekomendasi kalau kategori dipilih
-        if (currentKategori) showAiRekomendasi(currentKategori);
+        if (currentKategori && !currentSearch) showAiRekomendasi(currentKategori);
 
     } catch(e) {
         content.style.opacity = '1';

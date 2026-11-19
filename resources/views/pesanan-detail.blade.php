@@ -25,6 +25,63 @@
         </span>
     </div>
 
+    {{-- ── Tracking Status ─────────────────── --}}
+    <div class="bg-white rounded-3xl p-6 mb-5">
+        <h2 class="font-semibold text-ink mb-6">Status Pesanan</h2>
+        @php
+            $steps = ['Menunggu', 'Diproses', 'Selesai'];
+            $currentStatus = $order->status;
+            $isCancelled   = $currentStatus === 'Dibatalkan';
+            $currentStep   = $isCancelled ? -1 : array_search($currentStatus, $steps);
+        @endphp
+
+        @if($isCancelled)
+        <div class="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl px-5 py-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <div>
+                <p class="font-semibold text-red-700">Pesanan Dibatalkan</p>
+                <p class="text-sm text-red-500 mt-0.5">Pesanan ini telah dibatalkan.</p>
+            </div>
+        </div>
+        @else
+        <div class="relative">
+            {{-- Garis penghubung --}}
+            <div class="absolute top-5 left-5 right-5 h-0.5 bg-sand" style="z-index:0"></div>
+            <div class="absolute top-5 left-5 h-0.5 bg-wood transition-all duration-500"
+                 style="width: {{ $currentStep === 0 ? '0%' : ($currentStep === 1 ? '50%' : '100%') }}; z-index:1"></div>
+
+            <div class="relative flex justify-between" style="z-index:2">
+                @foreach($steps as $i => $step)
+                @php
+                    $done    = $i <= $currentStep;
+                    $active  = $i === $currentStep;
+                    $icons   = ['M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1.647 9.172A2 2 0 008.632 19h6.736a2 2 0 001.985-1.828L18 8M10 12v3m4-3v3', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'];
+                    $labels  = ['Pesanan Diterima', 'Sedang Diproses', 'Pesanan Selesai'];
+                    $descs   = ['Pesanan kamu sudah masuk', 'Sedang disiapkan & dikirim', 'Pesanan telah sampai'];
+                @endphp
+                <div class="flex flex-col items-center gap-2 w-1/3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                        {{ $done ? 'bg-wood text-white shadow-md' : 'bg-sand text-muted' }}
+                        {{ $active ? 'ring-4 ring-wood/20' : '' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$i] }}"/>
+                        </svg>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs font-semibold {{ $done ? 'text-ink' : 'text-muted' }}">{{ $labels[$i] }}</p>
+                        <p class="text-xs text-muted mt-0.5 hidden sm:block">{{ $descs[$i] }}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+
     {{-- Info pesanan --}}
     <div class="bg-white rounded-3xl p-6 mb-5">
         <h2 class="font-semibold text-ink mb-4">Informasi Pesanan</h2>
@@ -87,6 +144,31 @@
             </div>
         </div>
     </div>
+
+    {{-- Review per item (hanya jika pesanan selesai) --}}
+    @if(strtolower($order->status) === 'selesai')
+    <div class="bg-white rounded-3xl p-6 mb-5">
+        <h2 class="font-semibold text-ink mb-1">Beri Ulasan</h2>
+        <p class="text-sm text-muted mb-5">Bagaimana produk yang kamu terima?</p>
+        @foreach($order->detailReservasis as $detail)
+        <div class="border-b border-sand pb-6 mb-6 last:border-0 last:pb-0 last:mb-0">
+            <div class="flex gap-3 items-center mb-4">
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-sand shrink-0">
+                    @if($detail->barang->gambar_url)
+                        <img src="{{ $detail->barang->gambar_url }}" class="w-full h-full object-cover">
+                    @else
+                        <div class="w-full h-full flex items-end justify-center pb-1">
+                            <div class="w-6 h-6 bg-wood/50 rounded-t-lg"></div>
+                        </div>
+                    @endif
+                </div>
+                <p class="font-semibold text-ink text-sm">{{ $detail->barang->nama_barang }}</p>
+            </div>
+            @include('partials.reviews', ['barangId' => $detail->barang->id])
+        </div>
+        @endforeach
+    </div>
+    @endif
 
     {{-- Aksi --}}
     <div class="flex flex-col sm:flex-row gap-3">

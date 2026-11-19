@@ -28,4 +28,10 @@ class Barang extends Model
     public function detailTransaksis(){
         return $this->hasMany(DetailTransaksi::class);
     }
+    public function reviews(){
+        return $this->hasMany(Review::class);
+    }
+    public function wishlists(){
+        return $this->hasMany(Wishlist::class);
+    }
 }
