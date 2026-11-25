@@ -16,8 +16,7 @@ return new class extends Migration
             $table->foreignId('reservasi_id')->constrained('reservasis')->cascadeOnDelete();
             $table->foreignId('barang_id')->constrained('barangs');
             $table->integer('jumlah');
-            $table->timestamps();   
-            $table->boolean('stok_dikurangi')->default(false);
+            $table->timestamps();
         });
     }
 

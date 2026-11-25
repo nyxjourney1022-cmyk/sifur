@@ -37,4 +37,6 @@ return [
         'password' => env('ADMIN_PASSWORD'),
     ],
 
+    'llm_api' => env('LLM_API'),
+
 ];

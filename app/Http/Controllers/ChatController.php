@@ -12,7 +12,7 @@ class ChatController extends Controller
     // ── Helper: panggil Groq ─────────────────────────────────────────
     private function callGroq(array $messages, int $maxTokens = 400): ?string
     {
-        $response = Http::withToken(env('LLM_API'))
+        $response = Http::withToken(config('services.llm_api'))
             ->timeout(30)
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model'       => 'qwen/qwen3.8-27b',

@@ -29,7 +29,7 @@ class barangController extends Controller
             'stok_barang' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:1',
             'jenis_kayu' => 'required|string|max:100',
-            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webm|max:2048'
+            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
         DB::beginTransaction();
         try {
@@ -126,6 +126,12 @@ class barangController extends Controller
                 'success' => false
             ], 404);
         }
+
+        // Hapus gambar dari storage sebelum hapus record
+        if ($barang->gambar) {
+            Storage::disk('public')->delete($barang->gambar);
+        }
+
         $barang->delete();
         return response()->json([
             'message' => 'barang berhasil dihapus',
