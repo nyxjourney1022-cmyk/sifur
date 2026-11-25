@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('detail_reservasis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('reservasi_id')->constrained('reservasis');
+            $table->foreignId('reservasi_id')->constrained('reservasis')->cascadeOnDelete();
             $table->foreignId('barang_id')->constrained('barangs');
             $table->integer('jumlah');
             $table->timestamps();   
+            $table->boolean('stok_dikurangi')->default(false);
         });
     }
 

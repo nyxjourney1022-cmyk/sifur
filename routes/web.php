@@ -38,7 +38,7 @@ Route::get('/auth/google/callback', [AuthController::class, 'googleCallback'])->
 // ── Authenticated routes ──────────────────────────────────────
 Route::middleware('auth')->group(function () {
 
-    // Cart (semua JSON / AJAX)
+    // Cart
     Route::get('/cart',             [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add',        [CartController::class, 'add'])->name('cart.add');
     Route::patch('/cart/item/{id}', [CartController::class, 'update'])->name('cart.update');
@@ -51,30 +51,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/payment/{id}', [CheckoutController::class, 'payment'])->name('checkout.payment');
     Route::get('/checkout/success/{id}', [CheckoutController::class, 'success'])->name('checkout.success');
 
-    // Addresses (JSON)
-    Route::get('/addresses',              [AddressController::class, 'index'])->name('addresses.index');
-    Route::post('/addresses',             [AddressController::class, 'store'])->name('addresses.store');
-    Route::put('/addresses/{id}',         [AddressController::class, 'update'])->name('addresses.update');
-    Route::delete('/addresses/{id}',      [AddressController::class, 'destroy'])->name('addresses.destroy');
+    // Addresses
+    Route::get('/addresses',                [AddressController::class, 'index'])->name('addresses.index');
+    Route::post('/addresses',               [AddressController::class, 'store'])->name('addresses.store');
+    Route::put('/addresses/{id}',           [AddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/addresses/{id}',        [AddressController::class, 'destroy'])->name('addresses.destroy');
     Route::patch('/addresses/{id}/default', [AddressController::class, 'setDefault'])->name('addresses.default');
 
     // Profile
     Route::get('/profil',  [ProfileController::class, 'index'])->name('profil');
     Route::post('/profil', [ProfileController::class, 'update'])->name('profil.update');
 
-    // Wishlist
-    Route::get('/wishlist',               [WishlistController::class, 'index'])->name('wishlist');
-    Route::post('/wishlist/{barangId}',   [WishlistController::class, 'toggle'])->name('wishlist.toggle');
-    Route::post('/wishlist/check',        [WishlistController::class, 'check'])->name('wishlist.check');
+    // Wishlist — wishlist/check HARUS sebelum wishlist/{barangId}
+    Route::get('/wishlist',             [WishlistController::class, 'index'])->name('wishlist');
+    Route::post('/wishlist/check',      [WishlistController::class, 'check'])->name('wishlist.check');
+    Route::post('/wishlist/{barangId}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     // Reviews
     Route::get('/reviews/{barangId}',    [ReviewController::class, 'index']);
-    Route::post('/reviews/{barangId}',   [ReviewController::class, 'store'])->middleware('auth');
-    Route::delete('/reviews/{barangId}', [ReviewController::class, 'destroy'])->middleware('auth');
+    Route::post('/reviews/{barangId}',   [ReviewController::class, 'store']);
+    Route::delete('/reviews/{barangId}', [ReviewController::class, 'destroy']);
 
     // Pesanan
-    Route::get('/pesanan',       [OrderController::class, 'index'])->name('pesanan');
-    Route::get('/pesanan/{id}',  [OrderController::class, 'show'])->name('pesanan.show');
+    Route::get('/pesanan',      [OrderController::class, 'index'])->name('pesanan');
+    Route::get('/pesanan/{id}', [OrderController::class, 'show'])->name('pesanan.show');
 });
 
 // ── Chat CS — rate limited ────────────────────────────────────
@@ -83,24 +83,7 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/chat/rekomendasi', [ChatController::class, 'rekomendasiKategori'])->name('chat.rekomendasi');
 });
 
-// ── API: Backend CRUD — wajib auth ───────────────────────────
-Route::prefix('api')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/reservasi',          [reservasiController::class, 'index']);
-    Route::post('/reservasi',         [reservasiController::class, 'store']);
-    Route::put('/reservasi/{id}',     [reservasiController::class, 'update']);
-    Route::delete('/reservasi/{id}',  [reservasiController::class, 'destroy']);
-
-    Route::get('/barang',             [barangController::class, 'index']);
-    Route::post('/barang',            [barangController::class, 'store']);
-    Route::put('/barang/{id}',        [barangController::class, 'update']);
-    Route::delete('/barang/{id}',     [barangController::class, 'destroy']);
-
-    Route::get('/kayu',               [kayuController::class, 'index']);
-    Route::post('/kayu',              [kayuController::class, 'store']);
-    Route::put('/kayu/{id}',          [kayuController::class, 'update']);
-    Route::delete('/kayu/{id}',       [kayuController::class, 'destroy']);
-});
-
+// ── Admin panel (web views) ───────────────────────────────────
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/',          [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/barang',    [AdminController::class, 'barang'])->name('barang');
@@ -108,4 +91,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/reservasi', [AdminController::class, 'reservasi'])->name('reservasi');
     Route::get('/transaksi', [AdminController::class, 'transaksi'])->name('transaksi');
     Route::get('/pelanggan', [AdminController::class, 'pelanggan'])->name('pelanggan');
+});
+
+// ── API: Backend CRUD — admin only ───────────────────────────
+Route::prefix('api')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/reservasi',         [reservasiController::class, 'index']);
+    Route::post('/reservasi',        [reservasiController::class, 'store']);
+    Route::put('/reservasi/{id}',    [reservasiController::class, 'update']);
+    Route::delete('/reservasi/{id}', [reservasiController::class, 'destroy']);
+
+    Route::get('/barang',            [barangController::class, 'index']);
+    Route::post('/barang',           [barangController::class, 'store']);
+    Route::put('/barang/{id}',       [barangController::class, 'update']);
+    Route::delete('/barang/{id}',    [barangController::class, 'destroy']);
+
+    Route::get('/kayu',              [kayuController::class, 'index']);
+    Route::post('/kayu',             [kayuController::class, 'store']);
+    Route::put('/kayu/{id}',         [kayuController::class, 'update']);
+    Route::delete('/kayu/{id}',      [kayuController::class, 'destroy']);
 });
