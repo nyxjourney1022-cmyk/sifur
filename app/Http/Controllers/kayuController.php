@@ -4,85 +4,91 @@ namespace App\Http\Controllers;
 
 use App\Models\Kayu;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class kayuController extends Controller
 {
+    // Mengambil seluruh jenis kayu beserta jumlah barangnya
     public function index()
     {
-        $kayu = Kayu::all();
+        $kayu = Kayu::withCount('barangs')->get();
+
         return response()->json([
-            'message' => 'berhasil mengambil data kayu',
+            'message' => 'Berhasil mengambil data kayu',
             'success' => true,
-            'data' => $kayu
+            'data'    => $kayu,
         ]);
     }
+
+    // Menambahkan jenis kayu baru
     public function store(Request $request)
     {
         $validate = $request->validate([
-            'jenis_kayu' => 'required|string|max:100'
+            'jenis_kayu' => 'required|string|max:100|unique:kayus,jenis_kayu',
         ]);
-        DB::beginTransaction();
-        try {
-            $kayu = Kayu::create(['jenis_kayu' => $validate['jenis_kayu']]);
-            DB::commit();
-            return response()->json([
-                'message' => 'Kayu berhasil ditambahkan',
-                'data' => $kayu
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Kayu gagal ditambahkan',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+
+        $kayu = Kayu::create([
+            'jenis_kayu' => $validate['jenis_kayu'],
+        ]);
+
+        return response()->json([
+            'message' => 'Kayu berhasil ditambahkan',
+            'success' => true,
+            'data'    => $kayu,
+        ], 201);
     }
+
+    // Memperbarui jenis kayu
     public function update(Request $request, string $id)
     {
         $kayu = Kayu::find($id);
-        if (!$kayu) {
-            return response()->json([
-                'message' => 'Jenis Kayu tidak ditemukan',
-                'success' => false
-            ], 404);
-        }
-        $validate = $request->validate([
-            'jenis_kayu' => 'required|string|max:100'
-        ]);
-        DB::beginTransaction();
-        try {
 
-            $kayu->update([
-                'jenis_kayu' => $validate['jenis_kayu']
-            ]);
-            DB::commit();
-            return response()->json([
-                'message' => 'Berhasil diupdate',
-                'success' => true,
-                'data' => $kayu
-            ], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Kayu gagal diupdate',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-        public function destroy(string $id)
-    {
-        $kayu = Kayu::find($id);
         if (!$kayu) {
             return response()->json([
-                'message' => 'kayu tidak ditemukan',
-                'success' => false
+                'message' => 'Jenis kayu tidak ditemukan',
+                'success' => false,
             ], 404);
         }
-        $kayu->delete();
+
+        $validate = $request->validate([
+            'jenis_kayu' => 'required|string|max:100|unique:kayus,jenis_kayu,' . $kayu->id,
+        ]);
+
+        $kayu->update([
+            'jenis_kayu' => $validate['jenis_kayu'],
+        ]);
+
         return response()->json([
-            'message' => 'kayu berhasil dihapus',
-            'success' => true
+            'message' => 'Kayu berhasil diupdate',
+            'success' => true,
+            'data'    => $kayu->fresh()->loadCount('barangs'),
         ], 200);
-}
+    }
+
+    // Menghapus jenis kayu
+    public function destroy(string $id)
+    {
+        $kayu = Kayu::withCount('barangs')->find($id);
+
+        if (!$kayu) {
+            return response()->json([
+                'message' => 'Jenis kayu tidak ditemukan',
+                'success' => false,
+            ], 404);
+        }
+
+        // Mencegah penghapusan kayu yang masih digunakan barang
+        if ($kayu->barangs_count > 0) {
+            return response()->json([
+                'message' => "Kayu '{$kayu->jenis_kayu}' tidak bisa dihapus karena masih digunakan oleh {$kayu->barangs_count} barang.",
+                'success' => false,
+            ], 422);
+        }
+
+        $kayu->delete();
+
+        return response()->json([
+            'message' => 'Kayu berhasil dihapus',
+            'success' => true,
+        ], 200);
+    }
 }

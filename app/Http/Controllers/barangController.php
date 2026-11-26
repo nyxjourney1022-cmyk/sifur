@@ -8,16 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-
 class barangController extends Controller
 {
     public function index()
     {
-        $barang = Barang::all();
+        $barang = Barang::with('kayu')->get();
         return response()->json([
-            'message' => 'Barang berhasil di muat',
+            'message' => 'Barang berhasil dimuat',
             'success' => true,
-            'data' => $barang
+            'data'    => $barang,
         ]);
     }
 
@@ -25,41 +24,32 @@ class barangController extends Controller
     {
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'stok_barang' => 'required|integer|min:1',
-            'harga' => 'required|numeric|min:1',
-            'jenis_kayu' => 'required|string|max:100',
-            'gambar'=>'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'kategori'    => 'required|string|max:255',
+            'stok_barang' => 'required|integer|min:0',   
+            'harga'       => 'required|numeric|min:1',
+            'kayu_id'     => 'required|integer|exists:kayus,id', 
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
-        DB::beginTransaction();
-        try {
-            $pathGambar= null;
-            if($request->hasFile('gambar')){
-                $pathGambar= $request->file('gambar')->store('barang_image','public');
-            }
-            $kayu = Kayu::firstOrCreate(
-                ['jenis_kayu' => $validate['jenis_kayu']]
-            );
-            $barang = Barang::create([
-                'nama_barang' => $validate['nama_barang'],
-                'kategori' => $validate['kategori'],
-                'stok_barang' => $validate['stok_barang'],
-                'harga' => $validate['harga'],
-                'kayu_id' => $kayu->id,
-                'gambar'=>$pathGambar
-            ]);
-            DB::commit();
-            return response()->json([
-                'message' => 'Berhasil dimasukan kedatabase',
-                'data_barang' => $barang
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Barang tidak berhasil dimasukan kedatabase',
-                'error' => $e->getMessage()
-            ], 500);
+
+        $pathGambar = null;
+        if ($request->hasFile('gambar')) {
+            $pathGambar = $request->file('gambar')->store('barang_image', 'public');
         }
+
+        $barang = Barang::create([
+            'nama_barang' => $validate['nama_barang'],
+            'kategori'    => $validate['kategori'],
+            'stok_barang' => $validate['stok_barang'],
+            'harga'       => $validate['harga'],
+            'kayu_id'     => $validate['kayu_id'],  
+            'gambar'      => $pathGambar,
+        ]);
+
+        return response()->json([
+            'message'    => 'Barang berhasil ditambahkan',
+            'success'    => true,
+            'data_barang' => $barang->load('kayu'),
+        ], 201);
     }
 
     public function update(Request $request, string $id)
@@ -67,54 +57,43 @@ class barangController extends Controller
         $barang = Barang::find($id);
         if (!$barang) {
             return response()->json([
-                'message' => 'barang tidak ditemukan',
-                'success' => false
+                'message' => 'Barang tidak ditemukan',
+                'success' => false,
             ], 404);
         }
+
         $validate = $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori'    => 'required|string|max:255',
-            'stok_barang' => 'required|integer|min:1',
+            'stok_barang' => 'required|integer|min:0',   
             'harga'       => 'required|numeric|min:1',
-            'jenis_kayu'  => 'required|string|max:100',
-            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'kayu_id'     => 'required|integer|exists:kayus,id', 
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
-        DB::beginTransaction();
-        try {
-            // Hanya update gambar kalau ada file baru
-            $pathGambar = $barang->gambar;
-            if ($request->hasFile('gambar')) {
-                // Hapus gambar lama dari storage
-                if ($barang->gambar) {
-                    Storage::disk('public')->delete($barang->gambar);
-                }
-                $pathGambar = $request->file('gambar')->store('barang_image', 'public');
-            }
 
-            $kayu = Kayu::firstOrCreate([
-                'jenis_kayu' => $validate['jenis_kayu']
-            ]);
-            $barang->update([
-                'nama_barang' => $validate['nama_barang'],
-                'kategori'    => $validate['kategori'],
-                'stok_barang' => $validate['stok_barang'],
-                'harga'       => $validate['harga'],
-                'kayu_id'     => $kayu->id,
-                'gambar'      => $pathGambar,
-            ]);
-            DB::commit();
-            return response()->json([
-                'message'      => 'barang berhasil diupdate',
-                'success'      => true,
-                'data_barang'  => $barang->fresh(),
-            ], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Barang gagal diupdate',
-                'error'   => $e->getMessage()
-            ], 500);
+        // Hanya update gambar kalau ada file baru
+        $pathGambar = $barang->gambar;
+        if ($request->hasFile('gambar')) {
+            if ($barang->gambar) {
+                Storage::disk('public')->delete($barang->gambar);
+            }
+            $pathGambar = $request->file('gambar')->store('barang_image', 'public');
         }
+
+        $barang->update([
+            'nama_barang' => $validate['nama_barang'],
+            'kategori'    => $validate['kategori'],
+            'stok_barang' => $validate['stok_barang'],
+            'harga'       => $validate['harga'],
+            'kayu_id'     => $validate['kayu_id'],
+            'gambar'      => $pathGambar,
+        ]);
+
+        return response()->json([
+            'message'    => 'Barang berhasil diupdate',
+            'success'    => true,
+            'data_barang' => $barang->fresh()->load('kayu'),
+        ], 200);
     }
 
     public function destroy(string $id)
@@ -123,19 +102,19 @@ class barangController extends Controller
         if (!$barang) {
             return response()->json([
                 'message' => 'Barang tidak ditemukan',
-                'success' => false
+                'success' => false,
             ], 404);
         }
 
-        // Hapus gambar dari storage sebelum hapus record
         if ($barang->gambar) {
             Storage::disk('public')->delete($barang->gambar);
         }
 
         $barang->delete();
+
         return response()->json([
-            'message' => 'barang berhasil dihapus',
-            'success' => true
+            'message' => 'Barang berhasil dihapus',
+            'success' => true,
         ], 200);
     }
 }
