@@ -11,6 +11,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ──────────────────────────────────────────────
@@ -70,7 +71,7 @@ Route::middleware('throttle:30,1')->group(function () {
 });
 
 // ── API: Backend CRUD — wajib auth ───────────────────────────
-Route::prefix('api')->middleware('auth')->group(function () {
+Route::prefix('api')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/reservasi',          [reservasiController::class, 'index']);
     Route::post('/reservasi',         [reservasiController::class, 'store']);
     Route::put('/reservasi/{id}',     [reservasiController::class, 'update']);
@@ -85,4 +86,13 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::post('/kayu',              [kayuController::class, 'store']);
     Route::put('/kayu/{id}',          [kayuController::class, 'update']);
     Route::delete('/kayu/{id}',       [kayuController::class, 'destroy']);
+});
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/',          [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/barang',    [AdminController::class, 'barang'])->name('barang');
+    Route::get('/kayu',      [AdminController::class, 'kayu'])->name('kayu');
+    Route::get('/reservasi', [AdminController::class, 'reservasi'])->name('reservasi');
+    Route::get('/transaksi', [AdminController::class, 'transaksi'])->name('transaksi');
+    Route::get('/pelanggan', [AdminController::class, 'pelanggan'])->name('pelanggan');
 });

@@ -11,35 +11,35 @@ class TransaksiSeeder extends Seeder
 {
     public function run(): void
     {
-        // Transaksi 1 - Pelanggan 1
-        $t1 = Transaksi::create([
-            'pelanggan_id'      => 1,
-            'tanggal_transaksi' => '2026-11-02',
-            'total_harga'       => 0,
-        ]);
-        $this->addDetail($t1, barang_id: 1, jumlah: 2);
-        $this->addDetail($t1, barang_id: 5, jumlah: 1);
-        $t1->update(['total_harga' => $t1->detailTransaksis()->sum('subtotal')]);
+        $data = [
+            // [pelanggan_id, tanggal, [[barang_id, jumlah], ...]]
+            [1, '2026-11-02', [[1, 2], [5, 1]]],
+            [2, '2026-11-04', [[3, 1], [4, 1]]],
+            [5, '2026-11-06', [[6, 1], [7, 2]]],
+            [3, '2026-11-08', [[2, 1], [8, 1]]],
+            [4, '2026-11-10', [[1, 4], [3, 1]]],
+            [1, '2026-11-12', [[6, 2], [5, 3]]],
+            [2, '2026-11-14', [[4, 1], [7, 1], [8, 1]]],
+            [3, '2026-11-16', [[1, 6], [2, 2]]],
+            [5, '2026-11-18', [[3, 2], [6, 1]]],
+            [4, '2026-11-20', [[5, 2], [7, 3], [8, 1]]],
+        ];
 
-        // Transaksi 2 - Pelanggan 2
-        $t2 = Transaksi::create([
-            'pelanggan_id'      => 2,
-            'tanggal_transaksi' => '2026-11-04',
-            'total_harga'       => 0,
-        ]);
-        $this->addDetail($t2, barang_id: 3, jumlah: 1);
-        $this->addDetail($t2, barang_id: 4, jumlah: 1);
-        $t2->update(['total_harga' => $t2->detailTransaksis()->sum('subtotal')]);
+        foreach ($data as [$pelanggan_id, $tanggal, $items]) {
+            $transaksi = Transaksi::create([
+                'pelanggan_id'      => $pelanggan_id,
+                'tanggal_transaksi' => $tanggal,
+                'total_harga'       => 0,
+            ]);
 
-        // Transaksi 3 - Pelanggan 5
-        $t3 = Transaksi::create([
-            'pelanggan_id'      => 5,
-            'tanggal_transaksi' => '2026-11-06',
-            'total_harga'       => 0,
-        ]);
-        $this->addDetail($t3, barang_id: 6, jumlah: 1);
-        $this->addDetail($t3, barang_id: 7, jumlah: 2);
-        $t3->update(['total_harga' => $t3->detailTransaksis()->sum('subtotal')]);
+            foreach ($items as [$barang_id, $jumlah]) {
+                $this->addDetail($transaksi, $barang_id, $jumlah);
+            }
+
+            $transaksi->update([
+                'total_harga' => $transaksi->detailTransaksis()->sum('subtotal'),
+            ]);
+        }
     }
 
     private function addDetail($transaksi, int $barang_id, int $jumlah): void

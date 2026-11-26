@@ -13,12 +13,14 @@ class reservasiController extends Controller
     # meminta data reservasi
     public function index()
     {
-        $reservasi = Reservasi::all();
+        $reservasi = Reservasi::with(['pelanggan', 'detailReservasis.barang'])
+            ->latest()
+            ->paginate(10);
+
         return response()->json([
             'success' => true,
-            'message' => 'Suksess mengambil',
-            'data' => $reservasi
-
+            'message' => 'Sukses mengambil',
+            'data' => $reservasi,
         ]);
     }
 
